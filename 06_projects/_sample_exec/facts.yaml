@@ -1,0 +1,64 @@
+# 精簡版事實表（strict_facts 示範）：每個條目皆須包含 scope 與 shown。
+version:
+  value: "3.0"
+  spoken: ["3.0"]
+  shown: ["3.0"]
+  scope: "Sample tool release"
+  sources: ["Sample docs p.1"]
+  confirmed: true
+sheet_metal_parts:
+  value: "24"
+  spoken: ["24"]
+  shown: ["24"]
+  scope: "Only within this 24-part benchmark assembly"
+  sources: ["Benchmark log: Succeeded 24"]
+  confirmed: true
+skipped_parts:
+  value: "3"
+  spoken: []
+  shown: ["3"]
+  scope: "Benchmark assembly run"
+  sources: ["Benchmark log: Skipped 3 non-sheet bodies"]
+  confirmed: true
+failures:
+  value: "0"
+  spoken: []
+  shown: ["0"]
+  scope: "Benchmark assembly run"
+  sources: ["Benchmark log: Failed 0"]
+  confirmed: true
+batch_runtime:
+  value: "18.4 s"
+  spoken: []
+  shown: ["18.4"]
+  scope: "Benchmark 24-part batch execution"
+  sources: ["Benchmark log: Elapsed 18.4 s"]
+  confirmed: true
+manual_model_estimate:
+  value: "4–8 h"
+  spoken: ["4", "8"]
+  shown: ["4", "8"]
+  scope: "Team estimate for 24 parts processed manually with repairs"
+  sources: ["Engineering workflow estimate: 4-8 hrs total"]
+  confirmed: true
+manual_one_part:
+  value: "about 3 min"
+  spoken: []
+  shown: ["3"]
+  scope: "Only for the recorded single-part sample bracket"
+  sources: ["Single-part sample recording (~180 s)"]
+  confirmed: true
+act_one_part:
+  value: "5.4 s"
+  spoken: []
+  shown: ["5.4"]
+  scope: "Same single-part sample bracket as manual_one_part"
+  sources: ["Validator single-part run log: 5.4 s"]
+  confirmed: true
+builtin_pieces:
+  value: "8"
+  spoken: []
+  shown: ["8"]
+  scope: "Built-in tool face count on sample bracket"
+  sources: ["Built-in tool surface count: 8 faces"]
+  confirmed: true

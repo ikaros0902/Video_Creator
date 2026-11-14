@@ -1,0 +1,19 @@
+# 直接相依套件（相容版本區間）。完整鎖定版本見 requirements.lock.txt。
+# torch 需另外從 CUDA 套件庫安裝，見 scripts/setup.ps1。
+openai-whisper>=20250625
+edge-tts>=7.3,<8
+kokoro>=0.9.4,<0.10
+soundfile>=0.14,<1
+scenedetect[opencv]>=0.7,<0.8
+python-pptx>=1.0,<2
+jiwer>=4.0,<5
+pydantic>=2.14,<3
+pytest>=9.2,<10
+pytest-bdd>=9.0,<10
+textstat>=0.7.13,<0.8
+pyyaml>=6.0,<7
+numpy>=2.4,<3
+truststore>=0.10,<1
+auto-editor>=29.3,<30
+# Kokoro 的英文斷詞模型；第一次合成時也會自動安裝，這裡先固定版本
+en_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl

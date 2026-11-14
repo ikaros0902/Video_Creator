@@ -1,0 +1,37 @@
+{
+  "name": "00_template",
+  "version": "1.0.0",
+  "description": "Base style specification template adapted from lemo-opuscar style packs",
+  "palette": {
+    "bg_primary": "#0B1220",
+    "bg_surface": "#111B2E",
+    "text_primary": "#F8FAFC",
+    "text_muted": "#94A3B8",
+    "accent_primary": "#3FA9F5",
+    "accent_positive": "#3FE08A",
+    "accent_warning": "#F5B041",
+    "accent_negative": "#FC6255"
+  },
+  "typography": {
+    "display_font": "Inter, Segoe UI, sans-serif",
+    "mono_font": "JetBrains Mono, Consolas, monospace",
+    "h1_px": 56,
+    "body_px": 30,
+    "kicker_px": 22
+  },
+  "motion": {
+    "gsap_default_ease": "power2.out",
+    "remotion_spring": { "damping": 18, "stiffness": 170 },
+    "min_hold_s": 1.8
+  },
+  "safe_zone": {
+    "margin_x_px": 120,
+    "margin_y_px": 80,
+    "subtitle_reserve_bottom_px": 160
+  },
+  "forbidden": [
+    "neon rainbow gradients",
+    "bouncy elastic easing on engineering metrics",
+    "text overlapping vector stroke lines"
+  ]
+}

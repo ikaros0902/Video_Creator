@@ -1,0 +1,35 @@
+{
+  "name": "03_blueprint_schematic",
+  "version": "1.0.0",
+  "description": "Orthogonal CAD blueprint linework aesthetic for technical schematics",
+  "palette": {
+    "bg_primary": "#071A36",
+    "bg_grid": "rgba(96, 165, 250, 0.08)",
+    "text_primary": "#E0F2FE",
+    "text_muted": "#7DD3FC",
+    "stroke_primary": "#38BDF8",
+    "stroke_accent": "#FACC15",
+    "accent_negative": "#F87171"
+  },
+  "typography": {
+    "display_font": "IBM Plex Sans, Inter, sans-serif",
+    "mono_font": "IBM Plex Mono, JetBrains Mono, monospace",
+    "h1_px": 54,
+    "body_px": 28,
+    "kicker_px": 20
+  },
+  "motion": {
+    "gsap_default_ease": "power2.out",
+    "stroke_draw_duration_s": 0.7,
+    "min_hold_s": 1.8
+  },
+  "safe_zone": {
+    "margin_x_px": 120,
+    "margin_y_px": 80,
+    "subtitle_reserve_bottom_px": 160
+  },
+  "forbidden": [
+    "soft drop shadows or glassmorphism blur cards",
+    "curved organic blobs"
+  ]
+}

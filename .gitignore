@@ -1,0 +1,36 @@
+# 環境與工具（可重建）
+.venv/
+tools/
+node_modules/
+**/node_modules/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.log
+models/
+
+# 本機私有設定、任務記錄與編輯器狀態
+.agents/tasks/
+.serena/
+.vscode/
+
+# 本機實際影片素材、模板與暫存測試專案（絕不上傳）
+Videos/
+hyperframes/
+
+# 專案資料夾：預設排除全部私人專案，僅放行公開示範專案 _sample 與 _sample_exec
+06_projects/*
+!06_projects/README.md
+!06_projects/_sample/
+!06_projects/_sample_exec/
+06_projects/_sample/input/
+06_projects/_sample/work/
+06_projects/_sample/output/
+06_projects/_sample_exec/input/
+06_projects/_sample_exec/work/
+06_projects/_sample_exec/output/
+
+# Remotion / HyperFrames 輸出與快取
+remotion/out/
+**/renders/
+**/.hyperframes/

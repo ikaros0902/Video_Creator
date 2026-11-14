@@ -1,0 +1,22 @@
+{
+  "name": "video-creator-remotion",
+  "private": true,
+  "description": "Remotion master timeline that reads work/timeline.json",
+  "scripts": {
+    "studio": "remotion studio",
+    "render": "remotion render"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.541",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "remotion": "4.0.541"
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "typescript": "^5"
+  },
+  "allowScripts": {
+    "esbuild@0.28.1": true
+  }
+}

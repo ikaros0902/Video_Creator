@@ -1,0 +1,533 @@
+{
+  "meta": {
+    "title": "CAD Batch Validator v3.0",
+    "fps": 30,
+    "size": [
+      1920,
+      1080
+    ],
+    "voice": {
+      "engine": "kokoro",
+      "name": "am_michael",
+      "rate": "1.05"
+    },
+    "target_duration_s": [
+      130,
+      170
+    ],
+    "words_per_minute": [
+      130,
+      165
+    ],
+    "max_sentence_words": 20,
+    "max_fk_grade": 8.0
+  },
+  "lexicon": {
+    "CADValidator": "CAD Validator"
+  },
+  "glossary": [
+    {
+      "term": "Validator",
+      "defined_in": "s01",
+      "plain": "an automated CADValidator add-on"
+    },
+    {
+      "term": "midsurface",
+      "defined_in": "s02",
+      "plain": "one surface in the middle of a thin solid part"
+    }
+  ],
+  "banned_terms": [
+    "t/2",
+    "coining",
+    "occurrence",
+    "Modeler API",
+    "Wizard",
+    "clipboard",
+    "normals",
+    "HemPatch",
+    "FeaturePatch",
+    "robust",
+    "seamless",
+    "watertight"
+  ],
+  "scenes": [
+    {
+      "id": "s01",
+      "section": "vs_intro",
+      "narration": "Here, an engineer checks one thin metal part for simulation. The built-in tool leaves gaps, so the user fixes them by hand. That one part takes about three minutes. Our Validator, an automated CADValidator add-on, finishes it in under six seconds.",
+      "budget_s": [
+        15,
+        19
+      ],
+      "facts": [
+        "manual_one_part",
+        "act_one_part"
+      ],
+      "visuals": {
+        "internal": {
+          "kind": "recording",
+          "template": "vs_intro",
+          "clips": [
+            {
+              "recording": "rec02",
+              "source": [2.0, 8.0],
+              "label": "Built-in tool + manual repair",
+              "camera": "dolly_in"
+            },
+            {
+              "recording": "rec02",
+              "source": [20.0, 23.0],
+              "label": "Manual repair",
+              "start_at_word": "fixes",
+              "camera": "fixed"
+            },
+            {
+              "recording": "rec02",
+              "source": [35.0, 38.0],
+              "label": "Manual repair",
+              "camera": "fixed"
+            },
+            {
+              "recording": "rec02",
+              "source": [48.0, 51.0],
+              "label": "Manual cleanup complete",
+              "camera": "fixed"
+            },
+            {
+              "recording": "rec03",
+              "source": [12.0, 18.0],
+              "label": "Validator automated run",
+              "start_at_word": "Validator",
+              "camera": "fixed"
+            }
+          ],
+          "callouts": [
+            {
+              "at_word": "hand",
+              "box": [1200, 120, 420, 70],
+              "text": "Manual prep: ~3 min",
+              "clip": 3
+            },
+            {
+              "at_word": "six",
+              "box": [780, 260, 460, 140],
+              "text": "Validator run: 5.4 s",
+              "clip": 4
+            }
+          ],
+          "data": {
+            "timer_card": {
+              "clip": 0,
+              "text": "Same bracket · Hand: ~3 min vs Validator: 5.4 s"
+            },
+            "overlay_title": "CAD Batch Validator v3.0",
+            "logo": true
+          }
+        },
+        "public": {
+          "kind": "anim",
+          "template": "vs_intro_mock",
+          "data": {
+            "title": "Automated Thin-Shell Preparation",
+            "subtitle": "CAD Batch Validator v3.0",
+            "badge": "BEFORE VS AFTER",
+            "logo": false
+          }
+        }
+      }
+    },
+    {
+      "id": "s02",
+      "section": "why_midsurface",
+      "narration": "To simulate a thin metal part, engineers break it into small mesh blocks. Thin walls need huge numbers of tiny blocks, so simulation runs very slow. Instead, we replace the thin solid with one surface in the middle, called a midsurface. This cuts the number of blocks way down and saves solve time.",
+      "budget_s": [
+        20,
+        25
+      ],
+      "facts": [],
+      "visuals": {
+        "internal": {
+          "kind": "manim",
+          "template": "why_midsurface",
+          "data": {
+            "scene_class": "ThinShellScene",
+            "cues": [
+              {"what": "thin", "at_word": "thin"},
+              {"what": "blocks", "at_word": "blocks"},
+              {"what": "slow", "at_word": "slow"},
+              {"what": "replace", "at_word": "replace"},
+              {"what": "middle", "at_word": "middle"},
+              {"what": "name", "at_word": "midsurface"},
+              {"what": "number", "at_word": "number"}
+            ]
+          }
+        },
+        "public": {
+          "kind": "manim",
+          "template": "why_midsurface",
+          "data": {
+            "scene_class": "ThinShellScene",
+            "cues": [
+              {"what": "thin", "at_word": "thin"},
+              {"what": "blocks", "at_word": "blocks"},
+              {"what": "slow", "at_word": "slow"},
+              {"what": "replace", "at_word": "replace"},
+              {"what": "middle", "at_word": "middle"},
+              {"what": "name", "at_word": "midsurface"},
+              {"what": "number", "at_word": "number"}
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "s03",
+      "section": "vs_result",
+      "narration": "Now watch both tools on the same sample part. The built-in tool splits this simple bracket into eight separate surfaces. Sharp bends also lose surface links between walls. Next, our Validator runs on the same bracket and builds one connected shell.",
+      "budget_s": [
+        14,
+        18
+      ],
+      "facts": [
+        "builtin_pieces"
+      ],
+      "visuals": {
+        "internal": {
+          "kind": "recording",
+          "template": "vs_result",
+          "clips": [
+            {
+              "recording": "rec02",
+              "source": [10.0, 15.0],
+              "label": "Built-in tool result",
+              "camera": "fixed"
+            },
+            {
+              "recording": "rec02",
+              "source": [16.0, 20.0],
+              "label": "Split into 8 pieces",
+              "start_at_word": "eight",
+              "camera": "dolly_in"
+            },
+            {
+              "recording": "rec02",
+              "source": [22.0, 27.0],
+              "label": "Disconnected bends",
+              "start_at_word": "bends",
+              "camera": "fixed"
+            },
+            {
+              "recording": "rec03",
+              "source": [18.0, 25.0],
+              "label": "Validator: 1 connected shell",
+              "start_at_word": "Validator",
+              "camera": "fixed"
+            }
+          ],
+          "callouts": [
+            {
+              "at_word": "eight",
+              "box": [180, 240, 320, 280],
+              "text": "8 split faces in model tree",
+              "clip": 1
+            }
+          ]
+        },
+        "public": {
+          "kind": "anim",
+          "template": "cards3",
+          "data": {
+            "heading": "Why Built-in Surface Pairing Fails",
+            "cards": [
+              {
+                "title": "Split Geometry",
+                "label": "Creates eight disconnected faces on one simple bracket",
+                "at_word": "eight"
+              },
+              {
+                "title": "Broken Bends",
+                "label": "Sharp corners lose shared topology links across walls",
+                "at_word": "bends"
+              },
+              {
+                "title": "Single Shell Output",
+                "label": "Validator builds one clean connected mid-plane body",
+                "at_word": "connected"
+              }
+            ],
+            "inset": {
+              "drawing": "offset_half",
+              "caption": "Continuous single-skin offset avoids bend gaps",
+              "at_word": "Validator"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "s04",
+      "section": "theory",
+      "narration": "Why does the built-in tool break so often? Because it matches opposing pairs of faces across gaps. Our automated method runs in four clear step stages. Step one scans gap distances across faces to vote on wall thickness. The thickness value with the largest total area wins. Step two copies one smooth outer skin and shifts it inward by half that value. Avoiding face pairs means bends never break apart cleanly. Step three repairs holes, ribs, and bends, and it also bridges open seams and dents. Step four checks the finished shell against the original solid volume. Any large area drift gets flagged right away for quick user review.",
+      "budget_s": [
+        43,
+        51
+      ],
+      "facts": [
+        "builtin_method",
+        "thickness_vote_example",
+        "audit_threshold"
+      ],
+      "visuals": {
+        "internal": {
+          "kind": "manim",
+          "template": "theory",
+          "data": {
+            "scene_class": "OffsetMechanismScene",
+            "cues": [
+              {"what": "pair", "at_word": "matches"},
+              {"what": "step", "at_word": "step"},
+              {"what": "vote", "at_word": "scans"},
+              {"what": "largest", "at_word": "largest"},
+              {"what": "offset", "at_word": "copies"},
+              {"what": "inward", "at_word": "inward"},
+              {"what": "nopairs", "at_word": "break"},
+              {"what": "shapes", "at_word": "repairs"},
+              {"what": "hem", "at_word": "bridges"},
+              {"what": "dent", "at_word": "dents"},
+              {"what": "probe", "at_word": "checks"},
+              {"what": "review", "at_word": "review"}
+            ]
+          }
+        },
+        "public": {
+          "kind": "manim",
+          "template": "theory",
+          "data": {
+            "scene_class": "OffsetMechanismScene",
+            "cues": [
+              {"what": "pair", "at_word": "matches"},
+              {"what": "step", "at_word": "step"},
+              {"what": "vote", "at_word": "scans"},
+              {"what": "largest", "at_word": "largest"},
+              {"what": "offset", "at_word": "copies"},
+              {"what": "inward", "at_word": "inward"},
+              {"what": "nopairs", "at_word": "break"},
+              {"what": "shapes", "at_word": "repairs"},
+              {"what": "hem", "at_word": "bridges"},
+              {"what": "dent", "at_word": "dents"},
+              {"what": "probe", "at_word": "checks"},
+              {"what": "review", "at_word": "review"}
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "s05",
+      "section": "sop",
+      "narration": "Running it takes four quick clicks. First, open tool settings. Second, select the metal bodies. Third, start validation. Fourth, inspect the summary card and press Finish.",
+      "budget_s": [
+        9,
+        13
+      ],
+      "facts": [],
+      "visuals": {
+        "internal": {
+          "kind": "recording",
+          "template": "sop",
+          "clips": [
+            {
+              "recording": "rec03",
+              "source": [2.0, 6.0],
+              "label": "1. Open settings",
+              "camera": "fixed"
+            },
+            {
+              "recording": "rec03",
+              "source": [6.0, 9.0],
+              "label": "2. Select bodies",
+              "start_at_word": "Second",
+              "camera": "dolly_in"
+            },
+            {
+              "recording": "rec03",
+              "source": [9.0, 12.0],
+              "label": "3. Start batch run",
+              "start_at_word": "Third",
+              "camera": "fixed"
+            },
+            {
+              "recording": "rec03",
+              "source": [20.0, 25.0],
+              "label": "4. Review summary & Finish",
+              "start_at_word": "Fourth",
+              "camera": "fixed"
+            }
+          ],
+          "callouts": [
+            {
+              "at_word": "settings",
+              "box": [220, 160, 340, 120],
+              "text": "Review tolerance rules",
+              "clip": 0
+            },
+            {
+              "at_word": "select",
+              "box": [400, 200, 600, 420],
+              "text": "Pick target sheet bodies",
+              "clip": 1
+            },
+            {
+              "at_word": "Finish",
+              "box": [780, 260, 460, 140],
+              "text": "Inspect pass/skip log",
+              "clip": 2
+            }
+          ]
+        },
+        "public": {
+          "kind": "anim",
+          "template": "steps4",
+          "data": {
+            "heading": "Four Steps From CAD To Verified Shell",
+            "steps": [
+              {"title": "Settings", "label": "Confirm thickness limits", "at_word": "settings"},
+              {"title": "Select", "label": "Pick assembly or parts", "at_word": "Second"},
+              {"title": "Run", "label": "Offset and patch edges", "at_word": "Third"},
+              {"title": "Finish", "label": "Check volume audit report", "at_word": "Fourth"}
+            ],
+            "inset": {
+              "drawing": "hole_in_plate",
+              "caption": "Circular holes stay normalized without jagged seams",
+              "at_word": "Finish"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "s06",
+      "section": "full_chassis",
+      "narration": "This workflow scales cleanly to large multi-level assemblies. Next, we run a batch check across a full enclosure assembly. Nested components sit four to six levels deep. All 24 metal parts finish with zero errors, while checks skip solid blocks.",
+      "budget_s": [
+        13,
+        17
+      ],
+      "facts": [
+        "sheet_metal_parts",
+        "failures",
+        "assembly_depth",
+        "skipped_parts"
+      ],
+      "visuals": {
+        "internal": {
+          "kind": "recording",
+          "template": "full_chassis",
+          "clips": [
+            {
+              "recording": "rec01",
+              "source": [5.0, 9.0],
+              "label": "Open sample assembly",
+              "camera": "fixed"
+            },
+            {
+              "recording": "rec01",
+              "source": [10.0, 15.0],
+              "label": "Validator batch execution",
+              "start_at_word": "run",
+              "camera": "dolly_out"
+            },
+            {
+              "recording": "rec01",
+              "source": [40.0, 46.0],
+              "label": "Multi-level hierarchy",
+              "start_at_word": "deep",
+              "camera": "fixed"
+            },
+            {
+              "recording": "rec01",
+              "source": [60.0, 62.5],
+              "crop": [760, 240, 480, 140],
+              "label": "Batch report: Succeeded 24 | Skipped 3 | Failed 0",
+              "start_at_word": "checks",
+              "camera": "fixed"
+            }
+          ],
+          "callouts": [
+            {
+              "at_word": "deep",
+              "box": [160, 200, 320, 480],
+              "text": "4-6 nested assembly levels",
+              "clip": 2
+            }
+          ],
+          "data": {
+            "timer_card": {
+              "clip": 0,
+              "text": "24 parts succeeded · 0 failed · < 1 min"
+            }
+          }
+        },
+        "public": {
+          "kind": "anim",
+          "template": "chassis_mock",
+          "data": {
+            "title": "Full Assembly Test (24 Metal Parts)",
+            "count": 24,
+            "depth_label": "Assembly Hierarchy: 4–6 Levels Deep",
+            "metric": "24",
+            "result_line": "Succeeded: 24 | Skipped: 3 | Failed: 0",
+            "at_word": "checks"
+          }
+        }
+      }
+    },
+    {
+      "id": "s07",
+      "section": "roi_time",
+      "narration": "Now compare the total engineering time. By hand, 24 metal parts take 4 to 8 hours. Each part needs 10 to 20 minutes plus repair checks. Our Validator completes the whole assembly in under one minute.",
+      "budget_s": [
+        10,
+        14
+      ],
+      "facts": [
+        "manual_time",
+        "sheet_metal_parts",
+        "batch_runtime"
+      ],
+      "visuals": {
+        "internal": {
+          "kind": "manim",
+          "template": "roi_time",
+          "data": {
+            "scene_class": "RoiTimeScene",
+            "outro_title": "CAD Batch Validator v3.0",
+            "logo": true,
+            "cues": [
+              {"what": "grid", "at_word": "hand"},
+              {"what": "each", "at_word": "Each"},
+              {"what": "act", "at_word": "Validator"},
+              {"what": "result", "at_word": "minute"}
+            ]
+          }
+        },
+        "public": {
+          "kind": "manim",
+          "template": "roi_time",
+          "data": {
+            "scene_class": "RoiTimeScene",
+            "outro_title": "CAD Batch Validator v3.0",
+            "logo": false,
+            "cues": [
+              {"what": "grid", "at_word": "hand"},
+              {"what": "each", "at_word": "Each"},
+              {"what": "act", "at_word": "Validator"},
+              {"what": "result", "at_word": "minute"}
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

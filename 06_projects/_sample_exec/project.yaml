@@ -1,0 +1,7 @@
+# 精簡版範例專案設定：actual 素材請放在 input/ 並解除註解
+name: _sample_exec
+# pptx: input/slides.pptx
+# recordings:
+#   - input/rec01.mp4
+#   - input/rec02.mp4
+#   - input/rec03.mp4

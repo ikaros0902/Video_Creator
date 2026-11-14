@@ -1,0 +1,7 @@
+# 範例專案設定：實際使用時請將簡報與錄影放入 input/（本目錄保留純文字示範）
+name: _sample
+# pptx: input/slides.pptx
+# recordings:
+#   - input/rec01.mp4
+#   - input/rec02.mp4
+#   - input/rec03.mp4

@@ -1,0 +1,66 @@
+# 範例事實表（合成教學數據）：spoken 列出旁白允許出現的阿拉伯數字；confirmed 必須為 true。
+version:
+  value: "3.0"
+  spoken: ["3.0"]
+  sources: ["Sample documentation p.1"]
+  confirmed: true
+sheet_metal_parts:
+  value: "24"
+  spoken: ["24"]
+  sources: ["Benchmark suite log: Succeeded 24"]
+  confirmed: true
+skipped_parts:
+  value: "3"
+  spoken: []
+  sources: ["Benchmark suite log: Skipped 3 non-sheet bodies"]
+  confirmed: true
+failures:
+  value: "0"
+  spoken: []
+  sources: ["Benchmark suite log: Failed 0"]
+  confirmed: true
+batch_runtime:
+  value: "less than a minute"
+  spoken: []
+  sources: ["Benchmark suite log: Elapsed 18.4 s"]
+  confirmed: true
+manual_time:
+  value: "4–8 hrs (10–20 min per part plus checks)"
+  spoken: ["4", "8", "10", "20"]
+  sources: ["Workflow baseline estimate: 24 parts x 10-20 min + checks"]
+  confirmed: true
+manual_one_part:
+  value: "about 3 min"
+  spoken: []
+  sources: ["Single-part sample screen recording (~180 s)"]
+  confirmed: true
+act_one_part:
+  value: "5.4 s"
+  spoken: []
+  sources: ["Validator single-part run log: 5.4 s"]
+  confirmed: true
+builtin_pieces:
+  value: "8"
+  spoken: []
+  sources: ["Built-in tool surface count on sample bracket: 8 faces"]
+  confirmed: true
+builtin_method:
+  value: "pairs of offset faces"
+  spoken: []
+  sources: ["Standard built-in face-pair pairing workflow"]
+  confirmed: true
+assembly_depth:
+  value: "4–6 levels"
+  spoken: []
+  sources: ["Sample assembly tree depth metadata"]
+  confirmed: true
+thickness_vote_example:
+  value: "0.8 / 1.2 / 2.0 mm, 1.2 mm largest"
+  spoken: []
+  sources: ["Geometry histogram example"]
+  confirmed: true
+audit_threshold:
+  value: "0.3 %"
+  spoken: []
+  sources: ["Volume-to-area tolerance check spec"]
+  confirmed: true

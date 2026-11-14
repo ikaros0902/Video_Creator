@@ -1,0 +1,343 @@
+{
+  "meta": {
+    "title": "CAD Batch Validator v3.0 (executive cut)",
+    "fps": 30,
+    "size": [
+      1920,
+      1080
+    ],
+    "voice": {
+      "engine": "kokoro",
+      "name": "am_michael",
+      "rate": "1.05"
+    },
+    "target_duration_s": [
+      60,
+      90
+    ],
+    "words_per_minute": [
+      130,
+      165
+    ],
+    "max_sentence_words": 20,
+    "max_fk_grade": 8.0,
+    "sections": [
+      "hook",
+      "why_midsurface",
+      "manual",
+      "act",
+      "roi_time"
+    ],
+    "strict_facts": true
+  },
+  "lexicon": {
+    "CADValidator": "CAD Validator"
+  },
+  "glossary": [
+    {
+      "term": "midsurface",
+      "defined_in": "e02",
+      "plain": "one surface in the middle of a thin solid part"
+    },
+    {
+      "term": "Validator",
+      "defined_in": "e04",
+      "plain": "an automated CADValidator plugin"
+    }
+  ],
+  "banned_terms": [
+    "t/2",
+    "coining",
+    "occurrence",
+    "Modeler API",
+    "Wizard",
+    "clipboard",
+    "normals",
+    "HemPatch",
+    "FeaturePatch",
+    "robust",
+    "seamless",
+    "watertight"
+  ],
+  "scenes": [
+    {
+      "id": "e01",
+      "section": "hook",
+      "narration": "Before a product enters simulation, every metal part needs clean shell geometry. Today, many engineering teams still prepare those CAD parts by hand.",
+      "budget_s": [
+        9,
+        12
+      ],
+      "facts": [
+        "version"
+      ],
+      "visuals": {
+        "internal": {
+          "kind": "recording",
+          "template": "hook",
+          "clips": [
+            {
+              "recording": "rec01",
+              "source": [2.0, 9.0],
+              "label": "Test model: enclosure assembly",
+              "camera": "dolly_out"
+            },
+            {
+              "recording": "rec02",
+              "source": [3.0, 9.5],
+              "label": "Manual preparation",
+              "start_at_word": "Today",
+              "camera": "dolly_in"
+            }
+          ],
+          "data": {
+            "overlay_title": "CAD Batch Validator v3.0"
+          }
+        },
+        "public": {
+          "kind": "manim",
+          "template": "none",
+          "data": {
+            "scene_class": "ThinShellScene"
+          }
+        }
+      }
+    },
+    {
+      "id": "e02",
+      "section": "why_midsurface",
+      "narration": "To analyze a thin metal part, solvers split it into fine mesh blocks. Thin walls force tiny blocks, so solves turn slow. We replace a thin solid with one middle surface called a midsurface. One clean shell needs far fewer blocks and cuts the number of solver hours down.",
+      "budget_s": [
+        19,
+        22
+      ],
+      "facts": [],
+      "visuals": {
+        "internal": {
+          "kind": "manim",
+          "template": "why_midsurface",
+          "data": {
+            "scene_class": "ThinShellScene",
+            "cues": [
+              {"what": "thin", "at_word": "thin"},
+              {"what": "blocks", "at_word": "blocks"},
+              {"what": "slow", "at_word": "slow"},
+              {"what": "replace", "at_word": "replace"},
+              {"what": "middle", "at_word": "middle"},
+              {"what": "name", "at_word": "midsurface"},
+              {"what": "number", "at_word": "number"}
+            ]
+          }
+        },
+        "public": {
+          "kind": "manim",
+          "template": "why_midsurface",
+          "data": {
+            "scene_class": "ThinShellScene"
+          }
+        }
+      }
+    },
+    {
+      "id": "e03",
+      "section": "manual",
+      "narration": "On one sample bracket, the built-in tool stops short. It splits geometry into eight separate faces and leaves sharp corners open. Manual repairs take effort and edge stitches often fail. Finishing that one sample part took about three minutes.",
+      "budget_s": [
+        15,
+        17
+      ],
+      "facts": [
+        "builtin_pieces",
+        "manual_one_part"
+      ],
+      "visuals": {
+        "internal": {
+          "kind": "recording",
+          "template": "manual",
+          "clips": [
+            {
+              "recording": "rec02",
+              "source": [10.0, 15.0],
+              "label": "Built-in tool",
+              "camera": "fixed"
+            },
+            {
+              "recording": "rec02",
+              "source": [16.0, 20.0],
+              "label": "Split into 8 pieces",
+              "start_at_word": "eight",
+              "camera": "dolly_in"
+            },
+            {
+              "recording": "rec02",
+              "source": [22.0, 25.0],
+              "label": "Manual repair",
+              "start_at_word": "repairs",
+              "camera": "fixed"
+            },
+            {
+              "recording": "rec02",
+              "source": [30.0, 34.0],
+              "label": "Edge stitches fail",
+              "start_at_word": "fail",
+              "camera": "fixed"
+            },
+            {
+              "recording": "rec02",
+              "source": [40.0, 45.0],
+              "label": "Part complete",
+              "start_at_word": "took",
+              "camera": "fixed"
+            }
+          ],
+          "callouts": [
+            {
+              "at_word": "eight",
+              "box": [180, 240, 320, 280],
+              "text": "8 separate surfaces",
+              "clip": 1
+            },
+            {
+              "at_word": "fail",
+              "box": [420, 280, 460, 240],
+              "text": "Edge stitch failed",
+              "clip": 3
+            }
+          ],
+          "data": {
+            "timer_card": {
+              "clip": 0,
+              "text": "Sample part by hand: ~3 min"
+            }
+          }
+        },
+        "public": {
+          "kind": "manim",
+          "template": "none",
+          "data": {
+            "scene_class": "ThinShellScene"
+          }
+        }
+      }
+    },
+    {
+      "id": "e04",
+      "section": "act",
+      "narration": "Now watch our Validator version 3.0, an automated CADValidator plugin. On the same sample part, it builds one clean shell in under six seconds. Next, we run the full test assembly. All 24 metal parts finish with zero failures in less than a minute.",
+      "budget_s": [
+        18,
+        21
+      ],
+      "facts": [
+        "version",
+        "act_one_part",
+        "sheet_metal_parts",
+        "failures",
+        "skipped_parts",
+        "batch_runtime"
+      ],
+      "visuals": {
+        "internal": {
+          "kind": "recording",
+          "template": "act",
+          "clips": [
+            {
+              "recording": "rec03",
+              "source": [12.0, 18.0],
+              "label": "Validator v3.0: 5.4 s",
+              "camera": "fixed"
+            },
+            {
+              "recording": "rec01",
+              "source": [5.0, 11.5],
+              "label": "Full test assembly",
+              "start_at_word": "Next",
+              "camera": "fixed"
+            },
+            {
+              "recording": "rec01",
+              "source": [60.0, 62.5],
+              "crop": [760, 240, 480, 140],
+              "label": "24 parts: Succeeded 24 | Skipped 3 | Failed 0 (18.4 s)",
+              "start_at_word": "run",
+              "camera": "fixed"
+            }
+          ],
+          "callouts": [
+            {
+              "at_word": "six",
+              "box": [780, 260, 460, 140],
+              "text": "Single part: 5.4 s",
+              "clip": 0
+            }
+          ],
+          "data": {
+            "timer_card": {
+              "clip": 0,
+              "text": "Test assembly (24 parts): 18.4 s"
+            }
+          }
+        },
+        "public": {
+          "kind": "manim",
+          "template": "none",
+          "data": {
+            "scene_class": "ThinShellScene"
+          }
+        }
+      }
+    },
+    {
+      "id": "e05",
+      "section": "roi_time",
+      "narration": "On this 24 part test model, manual estimates take 4 to 8 hours with hand repairs. Running our Validator version 3.0 finishes the full batch in under one minute.",
+      "budget_s": [
+        11,
+        13
+      ],
+      "facts": [
+        "version",
+        "sheet_metal_parts",
+        "manual_model_estimate",
+        "batch_runtime"
+      ],
+      "visuals": {
+        "internal": {
+          "kind": "manim",
+          "template": "roi_time",
+          "data": {
+            "scene_class": "ExecTimeScene",
+            "manual_max_h": 8.0,
+            "act_s": 18.4,
+            "outro_title": "CAD Batch Validator v3.0",
+            "logo": true,
+            "cards": {
+              "head": "Test model: 24 parts",
+              "manual": "By hand: 4–8 h",
+              "manual_note": "Estimated manual prep and cleanup",
+              "act": "18.4 s",
+              "act_note": "Validator v3.0 batch run",
+              "scale": "Same time scale (bar = 8 h max)"
+            },
+            "cues": [
+              {"what": "model", "at_word": "model"},
+              {"what": "estimates", "at_word": "estimates"},
+              {"what": "repairs", "at_word": "repairs"},
+              {"what": "act", "at_word": "Validator"},
+              {"what": "minute", "at_word": "minute"}
+            ]
+          }
+        },
+        "public": {
+          "kind": "manim",
+          "template": "roi_time",
+          "data": {
+            "scene_class": "ExecTimeScene",
+            "outro_title": "CAD Batch Validator v3.0",
+            "logo": false
+          }
+        }
+      }
+    }
+  ]
+}
