@@ -1,0 +1,14 @@
+{% extends 'base.html.j2' %}{% from 'macros.html.j2' import clip %}
+{% block body %}
+{% call clip('kick',1,D,'left:' ~ margin ~ 'px;top:90px;','kicker') %}{{ d.get('kicker','WHAT IS A THIN SHELL?') }}{% endcall %}
+{% call clip('art',2,D,'left:310px;top:250px;width:1300px;height:520px;','hide') %}{% include 'art/concept.svg' %}{% endcall %}
+{% call clip('lsolid',3,D,'left:300px;top:720px;font-size:40px;','t hide') %}{{ d.labels[0] }}{% endcall %}
+{% call clip('lmid',4,D,'left:1490px;top:470px;font-size:52px;color:' ~ c.positive ~ ';','t hide') %}{{ d.labels[1] }}{% endcall %}
+{% endblock %}
+{% block script %}
+show("#art", {{ [reveal.get('solid',0.8)-0.4,0.1]|max }});
+show("#lsolid", {{ reveal.get('solid',1.0) }});
+tl.to("#slab", {opacity:0.25,duration:0.6}, {{ reveal.get('mid',D*0.5) }});
+tl.fromTo("#mid", {opacity:0}, {opacity:1,duration:0.6}, {{ reveal.get('mid',D*0.5) }});
+show("#lmid", {{ reveal.get('name',D*0.8) }}, {x:-30,y:0});
+{% endblock %}

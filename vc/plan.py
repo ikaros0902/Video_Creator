@@ -185,6 +185,13 @@ def timeline_srt(tl: dict) -> str:
                      for i, c in enumerate(tl["cues"], 1))
 
 
+def write_timeline_srt(tl: dict, out_path: Path) -> Path:
+    """將時間軸字幕寫入指定 SRT 檔案路徑。"""
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(timeline_srt(tl), encoding="utf-8")
+    return out_path
+
+
 def main(argv: list[str]) -> int:
     if not argv:
         print("用法：python -m vc plan <project>")
@@ -210,8 +217,7 @@ def main(argv: list[str]) -> int:
     (proj.work / "timeline.json").write_text(json.dumps(tl, ensure_ascii=False, indent=2), encoding="utf-8")
     for variant in ("internal", "public"):
         out = proj.output / variant
-        out.mkdir(parents=True, exist_ok=True)
-        (out / "final.srt").write_text(timeline_srt(tl), encoding="utf-8")
+        write_timeline_srt(tl, out / "final.srt")
 
     fps = tl["fps"]
     print(f"{'場景':<6}{'起點':>8}{'長度':>8}{'旁白':>8}")

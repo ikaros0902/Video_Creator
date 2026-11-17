@@ -14,6 +14,10 @@ models/
 .serena/
 .vscode/
 
+# 歷史專案封存
+/archive/
+archive/
+
 # 本機實際影片素材、模板與暫存測試專案（絕不上傳）
 Videos/
 hyperframes/
@@ -30,7 +34,34 @@ hyperframes/
 06_projects/_sample_exec/work/
 06_projects/_sample_exec/output/
 
+projects/*
+!projects/README.md
+!projects/_sample/
+!projects/_sample_exec/
+projects/_sample/input/
+projects/_sample/work/
+projects/_sample/output/
+projects/_sample_exec/input/
+projects/_sample_exec/work/
+projects/_sample_exec/output/
+
 # Remotion / HyperFrames 輸出與快取
 remotion/out/
 **/renders/
 **/.hyperframes/
+
+# 外部 clone 與驗證暫存
+external/*
+!external/MANIFEST.md
+.e2e_out/
+.e2e_log.txt
+.pytest_out.txt
+.pytest_m3_*/
+
+# 企業與第三方品牌私有素材（僅保留 .gitkeep，未提供時由 vc/brand.py 自動生成通用幾何標誌）
+assets/brand/*
+!assets/brand/.gitkeep
+
+# 本機私人專案遷移與草稿生成腳本
+scripts/create_scripts.py
+scripts/organize_videos_to_projects.py

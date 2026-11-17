@@ -1,0 +1,32 @@
+{
+  "theme_id": "swiss_kinetic",
+  "name": "Swiss Kinetic",
+  "tokens": {
+    "colors": {
+      "primary": "#A71D2A",
+      "secondary": "#444444",
+      "accent": "#A71D2A",
+      "background": "#F8F7F4",
+      "surface": "#FFFFFF",
+      "text_primary": "#111111",
+      "text_secondary": "#444444",
+      "positive": "#17633A",
+      "negative": "#A71D2A",
+      "border": "#222222"
+    },
+    "typography": {
+      "heading_font": "Arial, Helvetica, sans-serif",
+      "body_font": "Arial, Helvetica, sans-serif",
+      "base_size_px": 30,
+      "scale_ratio": 1.333
+    },
+    "surface": {
+      "card_corner_radius": 0,
+      "border_width": 1.5,
+      "shadow": "none"
+    },
+    "spacing": {
+      "safe_margin_px": 120
+    }
+  }
+}

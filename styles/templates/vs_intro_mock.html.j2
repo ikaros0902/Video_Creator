@@ -1,0 +1,13 @@
+{% extends 'base.html.j2' %}{% from 'macros.html.j2' import clip %}
+{% block body %}
+{% set panel_width = (safe_width - 160) / 2 %}
+{% call clip('kick',1,D,'left:' ~ margin ~ 'px;top:80px;','kicker') %}{{ d.get('badge','BEFORE VS AFTER') }}{% endcall %}
+{% call clip('head',2,D,'left:' ~ margin ~ 'px;top:125px;font-size:56px;','t') %}{{ d.title }}{% endcall %}
+{% call clip('sub',3,D,'left:' ~ margin ~ 'px;top:195px;font-size:32px;color:' ~ c.accent ~ ';','hide') %}{{ d.subtitle }}{% endcall %}
+{% call clip('panel_left',4,D,'left:' ~ (margin + 40) ~ 'px;top:280px;width:' ~ panel_width ~ 'px;height:520px;padding:30px;','card hide') %}<div class="t" style="font-size:38px;color:{{ c.negative }};margin-bottom:20px">{{ d.get('left_title','Built-in Manual Tool') }}</div><div style="display:grid;place-items:center">{% include 'art/comparison_before.svg' %}</div><div class="l" style="font-size:26px;text-align:center;margin-top:10px">{{ d.get('left_subtitle','Breaks geometry into pieces') }}</div>{% endcall %}
+{% call clip('panel_right',5,D,'left:' ~ (margin + 120 + panel_width) ~ 'px;top:280px;width:' ~ panel_width ~ 'px;height:520px;padding:30px;','card hide') %}<div class="t" style="font-size:38px;color:{{ c.positive }};margin-bottom:20px">{{ d.get('right_title','Batch Validator') }}</div><div style="display:grid;place-items:center">{% include 'art/comparison_after.svg' %}</div><div class="l" style="font-size:26px;text-align:center;margin-top:10px">{{ d.get('right_subtitle','One continuous surface') }}</div>{% endcall %}
+{% endblock %}
+{% block script %}
+show("#kick",0.1); show("#head",0.2); show("#sub",0.4); show("#panel_left",0.8,{x:-30,y:0});
+show("#panel_right",{{ cue('Version',D*0.5) }},{x:30,y:0});
+{% endblock %}

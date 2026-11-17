@@ -1,0 +1,21 @@
+{% extends 'base.html.j2' %}{% from 'macros.html.j2' import clip, logos %}
+{% block body %}
+{% set panel_width = (safe_width - 160) / 2 %}{% set content_left = margin + 40 %}
+{% call clip('kick',1,D,'left:' ~ margin ~ 'px;top:90px;','kicker') %}RESULT{% endcall %}
+{% call clip('after',2,D,'left:' ~ content_left ~ 'px;top:260px;width:' ~ panel_width ~ 'px;','hide') %}<div class="t" style="font-size:150px;color:{{ c.positive }}">{{ count_prefix }}{% if count_value is not none %}<span id="cnt_after">{{ count_value }}</span>{% endif %}{{ count_suffix }}</div><div class="l" style="font-size:40px">{{ d.after.label }}</div>{% endcall %}
+{% call clip('before',3,D,'left:' ~ (content_left + panel_width + 120) ~ 'px;top:260px;width:' ~ panel_width ~ 'px;','hide') %}<div class="t" style="font-size:150px;color:{{ c.negative }}">{{ d.before.value }}</div><div class="l" style="font-size:40px">{{ d.before.label }}</div>{% endcall %}
+{% call clip('vs',4,D,'left:' ~ (content_left + panel_width + 10) ~ 'px;top:330px;font-size:60px;','t hide') %}vs{% endcall %}
+{% call clip('foot',5,D,'left:' ~ (margin + 40) ~ 'px;top:640px;font-size:38px;','l hide') %}{{ d.footnote }}{% endcall %}
+{% call clip('outro',7,D,'left:' ~ margin ~ 'px;top:300px;width:' ~ safe_width ~ 'px;display:flex;flex-direction:column;align-items:center;gap:40px;','hide') %}<div class="t" style="font-size:72px">{{ d.get('outro_title','') }}</div>{% if d.get('logo') and images.get('primary') %}<div style="display:flex;align-items:center;gap:72px">{{ logos(images,84) }}</div>{% endif %}{% endcall %}
+{% endblock %}
+{% block script %}
+{% set ta=cue(d.after.get('at_word'),1.5) %}{% set tb=cue(d.before.get('at_word'),D*0.6) %}
+show("#after", {{ ta }}, {scale:0.9,y:0});
+{% if count_value is not none %}
+let count = {n:0}; tl.to(count,{n:{{ count_value }},duration:0.8,ease:"power2.out",onUpdate:()=>{document.getElementById("cnt_after").textContent=Math.round(count.n);}},{{ ta }});
+{% endif %}
+show("#foot", {{ ta+1.2 }}); show("#vs", {{ tb-0.2 }}); show("#before", {{ tb }}, {scale:0.9,y:0});
+{% set ending=([d.get('outro_at_s',D-2.8),D-1.5]|min)|round(3) %}
+tl.to(["#after","#before","#vs","#foot","#kick"],{opacity:0,y:-30,duration:0.6},{{ ending }});
+show("#outro", {{ ending+0.3 }}, {scale:0.96,y:0});
+{% endblock %}

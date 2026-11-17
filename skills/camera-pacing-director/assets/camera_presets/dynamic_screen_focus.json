@@ -1,0 +1,24 @@
+{
+  "shots": [
+    {
+      "shot_id": "shot_01",
+      "scene_ref": "s01",
+      "start_time_s": 0,
+      "end_time_s": 4.5,
+      "camera_motion": {
+        "type": "focus_target",
+        "target_selector": "#title",
+        "target_scale": 1.1,
+        "focal_point": [
+          0.5,
+          0.5
+        ],
+        "spring": {
+          "mass": 0.9,
+          "stiffness": 100,
+          "damping": 20
+        }
+      }
+    }
+  ]
+}

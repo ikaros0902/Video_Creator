@@ -1,0 +1,47 @@
+{% set t = style.tokens %}{% set c = t.colors %}{% set margin = t.spacing.safe_margin_px %}{% set safe_width = 1920 - 2 * margin %}
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face { font-family: "VC Sans"; src: url("assets/segoeui.ttf"); font-weight: 400; }
+@font-face { font-family: "VC Sans"; src: url("assets/segoeuib.ttf"); font-weight: 700; }
+#stage { position: relative; width: 1920px; height: 1080px; overflow: hidden;
+         background-color: {{ c.background }};
+         font-family: {{ t.typography.body_font }}; font-size: {{ t.typography.base_size_px }}px; color: {{ c.text_primary }}; }
+#camera { position: absolute; width: 1920px; height: 1080px; transform-origin: center; }
+:root { --safe-margin: {{ t.spacing.safe_margin_px }}px; }
+.clip { position: absolute; right: var(--safe-margin); }
+.clip svg { max-width: 100%; }
+#inset svg, #chassis svg { width: 100%; height: 100%; }
+.hide { opacity: 0; }
+.h1 { font-family: {{ t.typography.heading_font }}; font-weight: 700; font-size: {{ (t.typography.base_size_px * t.typography.scale_ratio * 1.5)|round(2) }}px; color: {{ c.text_primary }}; letter-spacing: -0.5px; }
+.kicker { font-weight: 700; font-size: 26px; letter-spacing: 4px; color: {{ c.accent }}; text-transform: uppercase; }
+.card { background: {{ c.surface }}; border: {{ t.surface.border_width }}px solid {{ c.border }};
+        box-shadow: {% if t.surface.shadow == 'soft' %}0 16px 36px -10px rgba(0,0,0,0.4){% else %}none{% endif %};
+        border-radius: {{ t.surface.card_corner_radius }}px; box-sizing: border-box; }
+.num { font-weight: 700; color: {{ c.accent }}; }
+.t { font-family: {{ t.typography.heading_font }}; font-weight: 700; color: {{ c.text_primary }}; }
+.l { font-weight: 400; color: {{ c.text_secondary }}; }
+.cap { font-size: 26px; color: {{ c.text_secondary }}; text-align: center; }
+.shot { background: {{ c.text_primary }}; border-radius: 14px; box-sizing: border-box; padding: 10px;
+        box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45); }
+.shot img { width: 100%; height: 100%; object-fit: contain; display: block; }
+{% block css %}{% endblock %}
+</style></head>
+<body>
+<div id="stage" data-composition-id="{{ comp_id }}" data-start="0" data-width="1920" data-height="1080"
+     data-duration="{{ duration }}" data-fps="{{ fps }}">
+<div id="camera">{% block body %}{% endblock %}</div>
+</div>
+<script src="assets/gsap.min.js"></script>
+<script>
+const tl = gsap.timeline({ paused: true });
+const D = {{ duration }};
+function show(sel, t, from) { tl.fromTo(sel, Object.assign({ opacity: 0, y: 24 }, from || {}),
+  { opacity: 1, y: 0, x: 0, scale: 1, duration: 0.45, ease: "power2.out" }, t); }
+{% block script %}{% endblock %}
+{% include "camera.js.j2" %}
+tl.to("#stage", { opacity: 1, duration: 0.01 }, D - 0.01);
+window.__timelines = window.__timelines || {};
+window.__timelines[{{ comp_id|tojson }}] = tl;
+</script>
+</body></html>

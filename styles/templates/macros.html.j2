@@ -1,0 +1,12 @@
+{% macro clip(id, track, duration, position, classes='') -%}
+<div id="{{ id }}" class="clip {{ classes }}" data-start="0" data-duration="{{ duration }}" data-track-index="{{ track }}" style="{{ position }}">{{ caller() }}</div>
+{%- endmacro %}
+{% macro logos(images, h) -%}
+<img src="{{ images.primary }}" style="height:{{ h }}px;display:block"><div style="width:2px;height:{{ (h * 0.9)|int }}px;background:currentColor"></div><img src="{{ images.secondary }}" style="height:{{ (h * 1.25)|int }}px;display:block">
+{%- endmacro %}
+{% macro inset(d, images, duration, position, track) -%}
+{% set ins=d.inset %}
+{% call clip('inset', track, duration, position, 'shot hide' if 'image' in ins else 'hide') %}
+{% if 'image' in ins %}<img src="{{ images.list[ins.image] }}">{% elif ins.drawing == 'hole_in_plate' %}{% include 'art/hole.svg' %}{% elif ins.drawing == 'offset_half' %}{% include 'art/offset.svg' %}{% endif %}
+{% endcall %}
+{%- endmacro %}

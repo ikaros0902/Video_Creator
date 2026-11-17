@@ -1,0 +1,25 @@
+{
+  "purpose": "Planning outline; not a pipeline script.",
+  "stages": [
+    {
+      "role": "situation",
+      "claim": "",
+      "fact_refs": []
+    },
+    {
+      "role": "complication",
+      "claim": "",
+      "fact_refs": []
+    },
+    {
+      "role": "question",
+      "claim": "",
+      "fact_refs": []
+    },
+    {
+      "role": "answer",
+      "claim": "",
+      "fact_refs": []
+    }
+  ]
+}

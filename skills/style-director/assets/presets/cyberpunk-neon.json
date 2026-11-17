@@ -1,0 +1,32 @@
+{
+  "theme_id": "cyberpunk_neon",
+  "name": "Cyberpunk Neon",
+  "tokens": {
+    "colors": {
+      "primary": "#FF84F4",
+      "secondary": "#D6C8E9",
+      "accent": "#FF84F4",
+      "background": "#100C21",
+      "surface": "#201637",
+      "text_primary": "#FFFFFF",
+      "text_secondary": "#D6C8E9",
+      "positive": "#72FFB6",
+      "negative": "#FF9E9E",
+      "border": "#8E5DAF"
+    },
+    "typography": {
+      "heading_font": "VC Sans, Segoe UI, sans-serif",
+      "body_font": "VC Sans, Segoe UI, sans-serif",
+      "base_size_px": 30,
+      "scale_ratio": 1.333
+    },
+    "surface": {
+      "card_corner_radius": 8,
+      "border_width": 1.5,
+      "shadow": "soft"
+    },
+    "spacing": {
+      "safe_margin_px": 120
+    }
+  }
+}

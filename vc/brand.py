@@ -13,7 +13,7 @@ import numpy as np
 
 from vc.tools import ROOT
 
-TEMPLATES = ROOT / "Videos" / "Templates"
+TEMPLATES = ROOT / "assets" / "templates" if (ROOT / "assets" / "templates").exists() else ROOT / "Videos" / "Templates"
 
 
 def _crop(rgba: np.ndarray, pad: int = 6) -> np.ndarray:

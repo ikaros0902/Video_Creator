@@ -1,0 +1,8 @@
+<svg width="760" height="330" viewBox="0 0 760 330">
+<rect x="80" y="70" width="600" height="160" fill="#8fb3e8" opacity="0.35" stroke="#dbe7ff" stroke-width="3"/>
+<line x1="80" y1="70" x2="680" y2="70" stroke="#ffffff" stroke-width="6"/>
+<line x1="80" y1="150" x2="680" y2="150" stroke="#3fe08a" stroke-width="6" stroke-dasharray="18 10"/>
+<line x1="720" y1="70" x2="720" y2="150" stroke="#ffd166" stroke-width="3"/><text x="732" y="120" fill="#ffd166" font-size="28">½</text>
+<text x="380" y="52" fill="#fff" font-size="26" text-anchor="middle">outer surface</text>
+<text x="380" y="190" fill="#3fe08a" font-size="26" text-anchor="middle">mid-plane shell</text>
+<text x="380" y="285" fill="#b9c6dc" font-size="24" text-anchor="middle">plate thickness</text></svg>

@@ -22,7 +22,13 @@ REMOTION_DIR = ROOT / "remotion"
 
 
 def _rel(path: str, work: Path) -> str:
-    return Path(os.path.relpath(path, work)).as_posix()
+    p = Path(path)
+    try:
+        if p.drive and work.drive and p.drive.lower() != work.drive.lower():
+            return p.resolve().as_posix()
+        return Path(os.path.relpath(path, work)).as_posix()
+    except ValueError:
+        return p.resolve().as_posix()
 
 
 def build_props(tl: dict, variant: str, work: Path,
@@ -158,12 +164,57 @@ def measure_loudness(path: Path) -> dict:
     return {"I": float(i.group(1)) if i else None, "TP": float(tp.group(1)) if tp else None}
 
 
-def normalize_loudness(src: Path, dst: Path) -> dict:
+def get_loudness_targets(proj_root: Path) -> tuple[float, float]:
+    """從 project.yaml 讀取目標響度與 True Peak 限制，預設回退至 LOUDNESS_I (-14.0) 與 LOUDNESS_TP (-1.5)。"""
+    cfg_path = proj_root / "project.yaml"
+    if not cfg_path.is_file():
+        return LOUDNESS_I, LOUDNESS_TP
+    try:
+        import yaml
+        cfg = yaml.safe_load(cfg_path.read_text(encoding="utf-8")) or {}
+    except Exception:
+        return LOUDNESS_I, LOUDNESS_TP
+
+    if not isinstance(cfg, dict):
+        return LOUDNESS_I, LOUDNESS_TP
+
+    target_lufs = LOUDNESS_I
+    target_tp = LOUDNESS_TP
+
+    loud_cfg = cfg.get("loudness")
+    if isinstance(loud_cfg, dict):
+        if "target_lufs" in loud_cfg:
+            target_lufs = float(loud_cfg["target_lufs"])
+        elif "target_i" in loud_cfg:
+            target_lufs = float(loud_cfg["target_i"])
+        elif "i" in loud_cfg:
+            target_lufs = float(loud_cfg["i"])
+        if "true_peak" in loud_cfg:
+            target_tp = float(loud_cfg["true_peak"])
+        elif "true_peak_max_dbtp" in loud_cfg:
+            target_tp = float(loud_cfg["true_peak_max_dbtp"])
+        elif "tp" in loud_cfg:
+            target_tp = float(loud_cfg["tp"])
+    elif isinstance(loud_cfg, (int, float)):
+        target_lufs = float(loud_cfg)
+
+    if "target_lufs" in cfg and not (isinstance(loud_cfg, dict) and "target_lufs" in loud_cfg):
+        target_lufs = float(cfg["target_lufs"])
+
+    if "true_peak" in cfg and not (isinstance(loud_cfg, dict) and "true_peak" in loud_cfg):
+        target_tp = float(cfg["true_peak"])
+    elif "true_peak_max_dbtp" in cfg and not (isinstance(loud_cfg, dict) and "true_peak_max_dbtp" in loud_cfg):
+        target_tp = float(cfg["true_peak_max_dbtp"])
+
+    return target_lufs, target_tp
+
+
+def normalize_loudness(src: Path, dst: Path, target_i: float = LOUDNESS_I, target_tp: float = LOUDNESS_TP) -> dict:
     """兩階段 loudnorm：先量測再套用，結果比單階段準。影像直接複製不重新編碼。"""
     from vc.media import ffmpeg, ffmpeg_run
     from vc.tools import run
 
-    target = f"I={LOUDNESS_I}:TP={LOUDNESS_TP}:LRA=11"
+    target = f"I={target_i}:TP={target_tp}:LRA=11"
     res = run([ffmpeg(), "-hide_banner", "-nostats", "-i", str(src), "-af", f"loudnorm={target}:print_format=json",
                "-f", "null", "-"], timeout=600)
     m = json.loads(res.stderr[res.stderr.rfind("{"):res.stderr.rfind("}") + 1])
@@ -179,6 +230,7 @@ def main(argv: list[str]) -> int:
         print("用法：python -m vc render <project> [--variant internal|public|all] [--name draft] [--no-gpu]")
         return 2
     proj = load_project(argv[0])
+    target_lufs, target_tp = get_loudness_targets(proj.root)
     variant = argv[argv.index("--variant") + 1] if "--variant" in argv else "all"
     name = argv[argv.index("--name") + 1] if "--name" in argv else "draft"
     use_gpu = "--no-gpu" not in argv
@@ -188,8 +240,17 @@ def main(argv: list[str]) -> int:
     variants = ("internal", "public") if variant == "all" else (variant,)
 
     import shutil
-    # 配樂優先序：專案 input/bgm.mp3 -> 專案根目錄 bgm.mp3 -> 共用範本 Videos/Templates/bgm.mp3
-    bgm_candidates = [proj.input / "bgm.mp3", proj.dir / "bgm.mp3", ROOT / "Videos" / "Templates" / "bgm.mp3"]
+    # 配樂優先序：專案 input/bgm.mp3 -> 專案 input/audio/ -> 專案根目錄 bgm.mp3 -> 全域 assets/templates -> Videos/Templates
+    bgm_candidates = [
+        proj.input / "bgm.mp3",
+        proj.input / "audio" / "bgm.mp3",
+        proj.input / "audio" / "bgm_midsurface.mp3",
+        proj.root / "bgm.mp3",
+        ROOT / "assets" / "templates" / "audio" / "bgm_midsurface.mp3",
+        ROOT / "assets" / "templates" / "bgm.mp3",
+        ROOT / "Videos" / "Templates" / "bgm.mp3",
+        ROOT / "Videos" / "Templates" / "bgm_midsurface.mp3",
+    ]
     bgm_src = next((p for p in bgm_candidates if p.is_file()), None)
     bgm_dst = proj.work / "bgm.mp3"
     if bgm_src is not None:
@@ -204,6 +265,7 @@ def main(argv: list[str]) -> int:
         print(f"配樂 {levels[0]:.1f} LUFS、旁白平均 {levels[1]:.1f} LUFS → 配樂音量 旁白時 {sp}、停頓時 {gp}")
 
     failed = []
+    rendered_outputs = {}
     for v in variants:
         props = build_props(tl, v, proj.work, rec_sizes, levels)
         missing = [s["id"] for s in props["scenes"] if s["kind"] in ("anim", "manim") and not s["anim_src"]]
@@ -223,13 +285,96 @@ def main(argv: list[str]) -> int:
             print(f"{v}: Remotion 渲染失敗\n{(res.stdout + res.stderr)[-2000:]}", file=sys.stderr)
             failed.append(v)
             continue
-        loud = normalize_loudness(raw, out)
+        loud = normalize_loudness(raw, out, target_i=target_lufs, target_tp=target_tp)
         info, n = probe(out), count_frames(out)
         ok = (n == tl["total_frames"] and info["has_audio"] and loud["I"] is not None
-              and abs(loud["I"] - LOUDNESS_I) <= 1.0 and (loud["TP"] is None or loud["TP"] <= LOUDNESS_TP + 0.7))
+              and abs(loud["I"] - target_lufs) <= 1.0 and (loud["TP"] is None or loud["TP"] <= target_tp + 0.1))
         failed += [] if ok else [v]
+        rendered_outputs[v] = {
+            "out": out,
+            "info": info,
+            "frames": n,
+            "loudness": loud,
+            "missing_anim": missing,
+        }
         print(f"{v}: {out}  {info['duration']:.2f}s  {n}/{tl['total_frames']} 格  "
               f"{info['width']}x{info['height']}  {loud['I']} LUFS  峰值 {loud['TP']} dBTP  佔位畫面={missing or '無'}")
+
+    # --- 依 PROJECT.md § Interface Contracts 建立標準化發布產物與診斷報告 ---
+    if not failed and rendered_outputs:
+        from datetime import datetime
+        import shutil
+
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        reports_dir = proj.output / "reports"
+        reports_dir.mkdir(parents=True, exist_ok=True)
+
+        metadata_variants = {}
+        loudness_measurements = {}
+
+        for v, meta in rendered_outputs.items():
+            src_file = meta["out"]
+            v_info = meta["info"]
+            v_loud = meta["loudness"]
+
+            if v == "internal":
+                master_vid = proj.output / "internal" / f"{ts}_internal_master.mp4"
+                shutil.copyfile(src_file, master_vid)
+                srt_src = proj.output / "internal" / "final.srt"
+                if srt_src.is_file():
+                    master_srt = proj.output / "internal" / f"{ts}_internal_master.srt"
+                    shutil.copyfile(srt_src, master_srt)
+
+            elif v == "public":
+                pub_vid_1 = proj.output / "public" / f"{ts}_public_public.mp4"
+                pub_vid_2 = proj.output / "public" / f"{ts}_public.mp4"
+                shutil.copyfile(src_file, pub_vid_1)
+                shutil.copyfile(src_file, pub_vid_2)
+
+            bitrate_kbps = round(src_file.stat().st_size * 8 / (v_info["duration"] * 1000), 1) if v_info.get("duration") else None
+            metadata_variants[v] = {
+                "file": str(src_file.relative_to(proj.root)).replace("\\", "/"),
+                "total_frames": meta["frames"],
+                "duration_s": round(v_info["duration"], 3),
+                "width": v_info["width"],
+                "height": v_info["height"],
+                "bitrate_kbps": bitrate_kbps,
+                "file_size_bytes": src_file.stat().st_size,
+            }
+            compliant = (
+                abs(v_loud["I"] - target_lufs) <= 1.0
+                and (v_loud["TP"] is None or v_loud["TP"] <= target_tp + 0.1)
+            ) if v_loud["I"] is not None else False
+            loudness_measurements[v] = {
+                "integrated_lufs": v_loud["I"],
+                "true_peak_dbtp": v_loud["TP"],
+                "target_lufs": target_lufs,
+                "compliant": compliant,
+            }
+
+        # 寫入 reports/metadata.json
+        metadata = {
+            "project": proj.name,
+            "timestamp": ts,
+            "fps": tl["fps"],
+            "total_frames": tl["total_frames"],
+            "target_duration_s": tl.get("total_s"),
+            "resolution": tl["size"],
+            "variants": metadata_variants,
+        }
+        (reports_dir / "metadata.json").write_text(json.dumps(metadata, indent=2, ensure_ascii=False), encoding="utf-8")
+
+        # 寫入 reports/loudness_report.json (EBU R128 合規報告)
+        loudness_report = {
+            "standard": "EBU R128",
+            "target_lufs": target_lufs,
+            "true_peak_max_dbtp": target_tp,
+            "measurements": loudness_measurements,
+            "overall_compliance": all(m["compliant"] for m in loudness_measurements.values()),
+        }
+        (reports_dir / "loudness_report.json").write_text(json.dumps(loudness_report, indent=2, ensure_ascii=False), encoding="utf-8")
+        print(f"[OK] 標準化報告產出完成：{reports_dir / 'metadata.json'} 與 {reports_dir / 'loudness_report.json'}")
+
     return 1 if failed else 0
 
 

@@ -1,0 +1,20 @@
+{
+  "layouts": [
+    {
+      "id": "claim_image",
+      "headline": "top",
+      "image": "right",
+      "evidence": "left"
+    },
+    {
+      "id": "comparison",
+      "columns": 2,
+      "shared_baseline": true
+    },
+    {
+      "id": "metric_evidence",
+      "metric": "left",
+      "source": "bottom"
+    }
+  ]
+}

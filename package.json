@@ -1,11 +1,24 @@
 {
-  "name": "video-creator-tools",
+  "name": "video-creator-root",
   "private": true,
-  "description": "Node CLI tools for the video pipeline (HyperFrames, capcut-cli)",
+  "description": "Video Creator monorepo with CLI tools and Remotion compositor",
+  "workspaces": [
+    "remotion"
+  ],
   "engines": {
     "node": ">=22"
   },
+  "scripts": {
+    "doctor": "python -m vc doctor",
+    "test": "pytest",
+    "remotion:studio": "npm run studio --workspace=remotion",
+    "remotion:render": "npm run render --workspace=remotion",
+    "hf:lint": "hyperframes lint",
+    "marp": "marp --no-stdin",
+    "install:all": "npm install"
+  },
   "devDependencies": {
+    "@marp-team/marp-cli": "^4.5.1",
     "capcut-cli": "~0.33.1",
     "gsap": "^3.14.2",
     "hyperframes": "~0.9.26"

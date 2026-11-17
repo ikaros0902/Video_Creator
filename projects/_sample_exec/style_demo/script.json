@@ -1,0 +1,59 @@
+{
+  "meta": {
+    "title": "One story, two visual styles",
+    "fps": 30,
+    "size": [1920, 1080],
+    "voice": {
+      "engine": "edge",
+      "name": "en-US-AndrewNeural",
+      "rate": "+0%"
+    },
+    "target_duration_s": [8, 12],
+    "words_per_minute": [130, 165],
+    "max_sentence_words": 20,
+    "max_fk_grade": 8.0,
+    "sections": ["demo"]
+  },
+  "lexicon": {},
+  "glossary": [],
+  "banned_terms": [],
+  "scenes": [
+    {
+      "id": "s01",
+      "section": "demo",
+      "narration": "One clear story can shift from a bold business look to a calm Swiss layout.",
+      "budget_s": [4, 8],
+      "facts": [],
+      "visuals": {
+        "internal": {
+          "kind": "anim",
+          "template": "cards3",
+          "images": ["slides/previews/slide_01.png"],
+          "data": {
+            "heading": "One idea, shown three ways",
+            "cards": [
+              {"title": "One story", "label": "Keep the message clear.", "at_word": "clear"},
+              {"title": "Business style", "label": "Use bold color and depth.", "at_word": "business"},
+              {"title": "Swiss style", "label": "Use a quiet, open grid.", "at_word": "Swiss"}
+            ],
+            "inset": {"image": 0, "caption": "Generated slide input"}
+          }
+        },
+        "public": {
+          "kind": "anim",
+          "template": "cards3",
+          "images": ["slides/previews/slide_01.png"],
+          "data": {
+            "heading": "One idea, shown three ways",
+            "cards": [
+              {"title": "One story", "label": "Keep the message clear.", "at_word": "clear"},
+              {"title": "Business style", "label": "Use bold color and depth.", "at_word": "business"},
+              {"title": "Swiss style", "label": "Use a quiet, open grid.", "at_word": "Swiss"}
+            ],
+            "inset": {"image": 0, "caption": "Generated slide input"}
+          }
+        }
+      }
+    }
+  ]
+}

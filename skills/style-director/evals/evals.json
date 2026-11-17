@@ -1,0 +1,17 @@
+{
+  "skill_name": "style-director",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Use style-director to prepare an engineering explainer for a general audience. Keep all claims traceable.",
+      "expected_output": "A scoped artifact with explicit inputs, outputs, and source references.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Use style-director with incomplete facts and conflicting style requirements. State what can be produced and identify unresolved inputs.",
+      "expected_output": "No invented facts or unsupported claims of completed rendering.",
+      "files": []
+    }
+  ]
+}

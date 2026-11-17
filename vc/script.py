@@ -33,7 +33,7 @@ class Voice(BaseModel):
 
 class Meta(BaseModel):
     title: str
-    fps: int = 30
+    fps: int = Field(default=30, gt=0)
     size: tuple[int, int] = (1920, 1080)
     voice: Voice = Voice()
     target_duration_s: tuple[float, float] = (130.0, 170.0)
@@ -44,6 +44,14 @@ class Meta(BaseModel):
     sections: tuple[str, ...] | None = None
     # 開啟後，每段旁白與畫面上的數字都只能來自這一段引用的 facts（精簡版用；完整版不開，行為不變）
     strict_facts: bool = False
+
+    @model_validator(mode="after")
+    def _validate_meta(self):
+        if self.fps <= 0:
+            raise ValueError(f"fps must be greater than 0, got {self.fps}")
+        if self.size[0] <= 0 or self.size[1] <= 0:
+            raise ValueError(f"size dimensions must be positive, got {self.size}")
+        return self
 
 
 class Clip(BaseModel):
@@ -126,7 +134,7 @@ class Fact(BaseModel):
 
 # ---------- 文字工具 ----------
 
-_SENT_SPLIT = re.compile(r"(?<=[.!?])\s+")
+_SENT_SPLIT = re.compile(r"(?<=[.!?])\s+|(?<=[。！？])\s*")
 _NUM = re.compile(r"\d+(?:\.\d+)?")
 
 
@@ -135,7 +143,7 @@ def sentences(text: str) -> list[str]:
 
 
 def words(text: str) -> list[str]:
-    return re.findall(r"[A-Za-z0-9][A-Za-z0-9.'\-]*", text)
+    return re.findall(r"[\u4e00-\u9fff]|[A-Za-z0-9][A-Za-z0-9.'\-]*", text)
 
 
 def numbers(text: str) -> list[str]:

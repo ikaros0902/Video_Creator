@@ -1,0 +1,17 @@
+<svg width="760" height="480" viewBox="0 0 760 480">
+<rect x="40" y="60" width="680" height="340" rx="16" fill="rgba(26,46,76,0.6)" stroke="#3fa9f5" stroke-width="3"/>
+<rect x="70" y="90" width="620" height="50" rx="8" fill="rgba(63,169,245,0.15)" stroke="#3fa9f5" stroke-width="1.5"/>
+<rect x="70" y="160" width="620" height="50" rx="8" fill="rgba(63,169,245,0.15)" stroke="#3fa9f5" stroke-width="1.5"/>
+<rect x="70" y="230" width="620" height="50" rx="8" fill="rgba(63,169,245,0.15)" stroke="#3fa9f5" stroke-width="1.5"/>
+<rect x="70" y="300" width="620" height="50" rx="8" fill="rgba(63,169,245,0.15)" stroke="#3fa9f5" stroke-width="1.5"/>
+<circle cx="110" cy="115" r="12" fill="#3fe08a"/>
+<circle cx="150" cy="115" r="12" fill="#3fe08a"/>
+<circle cx="190" cy="115" r="12" fill="#3fe08a"/>
+<circle cx="110" cy="185" r="12" fill="#3fe08a"/>
+<circle cx="150" cy="185" r="12" fill="#3fe08a"/>
+<circle cx="190" cy="185" r="12" fill="#3fe08a"/>
+<text x="650" y="125" fill="#3fe08a" font-size="22" font-weight="700" text-anchor="end">OK</text>
+<text x="650" y="195" fill="#3fe08a" font-size="22" font-weight="700" text-anchor="end">OK</text>
+<text x="650" y="265" fill="#3fe08a" font-size="22" font-weight="700" text-anchor="end">OK</text>
+<text x="650" y="335" fill="#3fe08a" font-size="22" font-weight="700" text-anchor="end">OK</text>
+</svg>

@@ -1,0 +1,32 @@
+{
+  "theme_id": "executive_navy",
+  "name": "Executive Navy",
+  "tokens": {
+    "colors": {
+      "primary": "#3FA9F5",
+      "secondary": "#B9C6DC",
+      "accent": "#3FA9F5",
+      "background": "#0B1220",
+      "surface": "#101A2E",
+      "text_primary": "#FFFFFF",
+      "text_secondary": "#B9C6DC",
+      "positive": "#3FE08A",
+      "negative": "#FC6255",
+      "border": "#33465F"
+    },
+    "typography": {
+      "heading_font": "VC Sans, Segoe UI, sans-serif",
+      "body_font": "VC Sans, Segoe UI, sans-serif",
+      "base_size_px": 30,
+      "scale_ratio": 1.333
+    },
+    "surface": {
+      "card_corner_radius": 18,
+      "border_width": 1.5,
+      "shadow": "soft"
+    },
+    "spacing": {
+      "safe_margin_px": 120
+    }
+  }
+}

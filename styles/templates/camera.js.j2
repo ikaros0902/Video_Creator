@@ -1,0 +1,37 @@
+const cameraShots = {{ camera_shots|tojson }};
+function springEase(parameters, seconds) {
+  const omega = Math.sqrt(parameters.stiffness / parameters.mass);
+  const zeta = parameters.damping / (2 * Math.sqrt(parameters.stiffness * parameters.mass));
+  function step(t) {
+    if (zeta < 1) {
+      const wd = omega * Math.sqrt(1 - zeta * zeta);
+      return 1 - Math.exp(-zeta * omega * t) * (Math.cos(wd*t) + zeta*omega/wd*Math.sin(wd*t));
+    }
+    if (Math.abs(zeta-1) < 0.00001) return 1 - (1 + omega*t)*Math.exp(-omega*t);
+    const a = -omega*(zeta-Math.sqrt(zeta*zeta-1));
+    const b = -omega*(zeta+Math.sqrt(zeta*zeta-1));
+    return 1 - (b*Math.exp(a*t)-a*Math.exp(b*t))/(b-a);
+  }
+  const end = step(seconds);
+  return (progress) => Math.max(0, Math.min(1, step(progress*seconds)/end));
+}
+for (const shot of cameraShots) {
+  const m = shot.camera_motion;
+  const seconds = shot.end_time_s - shot.start_time_s;
+  const focal = m.focal_point || [0.5,0.5];
+  let from = {x:0, y:0, scale:m.start_scale || 1, transformOrigin:`${focal[0]*100}% ${focal[1]*100}%`};
+  let to = {x:0, y:0, scale:m.end_scale || 1, duration:seconds, ease:m.spring ? springEase(m.spring,seconds) : "power2.inOut"};
+  if (m.type === "static_lock") to.scale = from.scale;
+  if (m.type === "pan_horizontal") to.x = m.distance_px;
+  if (m.type === "pan_vertical") to.y = m.distance_px;
+  if (m.type === "focus_target") {
+    const target = document.querySelector(m.target_selector);
+    if (!target) throw new Error(`Camera target does not exist: ${m.target_selector}`);
+    const rect = target.getBoundingClientRect();
+    const scale = m.target_scale || 1.2;
+    to.scale = scale;
+    to.x = (960-rect.left-rect.width/2)*scale;
+    to.y = (465-rect.top-rect.height/2)*scale;
+  }
+  tl.fromTo("#camera", from, to, shot.start_time_s);
+}

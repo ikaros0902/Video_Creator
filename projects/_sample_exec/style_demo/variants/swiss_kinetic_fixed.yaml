@@ -1,0 +1,9 @@
+name: style_demo
+title: "One story, two visual styles"
+style: swiss_kinetic
+camera_mode: fixed
+pptx: input/slides/style_demo.pptx
+voice:
+  engine: edge
+  name: en-US-AndrewNeural
+  rate: +0%

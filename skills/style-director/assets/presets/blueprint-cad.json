@@ -1,0 +1,32 @@
+{
+  "theme_id": "blueprint",
+  "name": "Blueprint",
+  "tokens": {
+    "colors": {
+      "primary": "#84D8FF",
+      "secondary": "#B8D3EE",
+      "accent": "#84D8FF",
+      "background": "#061B35",
+      "surface": "#0A294C",
+      "text_primary": "#FFFFFF",
+      "text_secondary": "#B8D3EE",
+      "positive": "#8BE6B4",
+      "negative": "#FFA5A5",
+      "border": "#436986"
+    },
+    "typography": {
+      "heading_font": "Consolas, monospace",
+      "body_font": "Consolas, monospace",
+      "base_size_px": 30,
+      "scale_ratio": 1.333
+    },
+    "surface": {
+      "card_corner_radius": 2,
+      "border_width": 1.5,
+      "shadow": "none"
+    },
+    "spacing": {
+      "safe_margin_px": 120
+    }
+  }
+}

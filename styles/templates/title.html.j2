@@ -1,0 +1,13 @@
+{% extends 'base.html.j2' %}{% from 'macros.html.j2' import clip, logos %}
+{% block body %}
+{% call clip('bar',1,D,'left:' ~ (margin + 40) ~ 'px;top:380px;width:360px;height:8px;background:' ~ c.accent ~ ';transform-origin:left;') %}{% endcall %}
+{% call clip('title',2,D,'left:' ~ (margin + 40) ~ 'px;top:410px;font-size:110px;','t hide') %}{{ d.title }}{% endcall %}
+{% call clip('sub',3,D,'left:' ~ (margin + 44) ~ 'px;top:560px;font-size:46px;color:' ~ c.accent ~ ';','hide') %}{{ d.subtitle }}{% endcall %}
+{% if d.get('logo') and images.get('primary') %}{% call clip('logos',4,D,'right:' ~ margin ~ 'px;top:90px;height:56px;display:flex;align-items:center;gap:56px;','hide') %}{{ logos(images,56) }}{% endcall %}{% endif %}
+{% endblock %}
+{% block script %}
+tl.fromTo("#bar", {scaleX: 0}, {scaleX: 1, duration: 0.6, ease: "power2.out"}, 0.1);
+show("#title", 0.25);
+show("#sub", {{ cue(d.get('at_word'),0.6) }});
+{% if d.get('logo') and images.get('primary') %}show("#logos", 0.9);{% endif %}
+{% endblock %}

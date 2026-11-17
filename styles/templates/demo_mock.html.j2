@@ -1,0 +1,20 @@
+{% extends 'base.html.j2' %}{% from 'macros.html.j2' import clip %}
+{% block body %}
+{% call clip('win',1,D,'left:' ~ margin ~ 'px;top:80px;width:' ~ (1920 - 2*margin) ~ 'px;height:800px;','card') %}{% endcall %}
+{% call clip('art',2,D,'left:180px;top:170px;width:900px;height:560px;') %}{% include 'art/demo.svg' %}{% endcall %}
+{% for step in d.steps %}{% set i=loop.index0 %}{% call clip('chip' ~ i,3+i,D,'left:1180px;top:' ~ (180+i*120) ~ 'px;width:560px;height:96px;','card hide') %}<div class="t" style="font-size:36px;padding:24px 30px">{{ i+1 }}. {{ step.title }}</div>{% endcall %}{% endfor %}
+{% call clip('bar',8,D,'left:180px;top:760px;width:900px;height:16px;background:' ~ c.border ~ ';border-radius:8px;') %}{% endcall %}
+{% call clip('fill',9,D,'left:180px;top:760px;width:900px;height:16px;background:' ~ c.accent ~ ';border-radius:8px;transform-origin:left;') %}{% endcall %}
+{% call clip('res',10,D,'left:180px;top:800px;width:1500px;font-size:34px;color:' ~ c.positive ~ ';','t hide') %}{{ d.result_line }}{% endcall %}
+{% endblock %}
+{% block script %}
+{% for step in d.steps %}{% set i=loop.index0 %}{% set at=cue(step.get('at_word'),1+i*2) %}
+show("#chip{{ i }}",{{ at }},{x:30,y:0}); tl.to("#chip{{ i }}",{borderColor:{{ c.accent|tojson }},duration:0.3},{{ at }});
+{% endfor %}
+{% set third=cue(d.steps[2].get('at_word'),5) %}{% set result_at=cue((d.get('result_at_word') or {}).get('at_word'),third+1.0) %}
+tl.set("#fill",{scaleX:0},0);
+tl.to(["#mtop","#mfront","#mside"],{fill:{{ c.accent|tojson }},duration:0.3},{{ cue(d.steps[1].get('at_word'),3) }});
+tl.to("#fill",{scaleX:1,duration:{{ [result_at-third,0.5]|max }},ease:"none"},{{ third }});
+tl.to(["#mtop","#mfront","#mside"],{fill:{{ c.positive|tojson }},duration:0.4},{{ result_at }});
+show("#res",{{ result_at }});
+{% endblock %}

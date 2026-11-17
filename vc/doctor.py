@@ -12,7 +12,7 @@ from typing import Callable
 
 from vc.tools import ROOT, find_tool, run, use_system_certs
 
-SETUP_HINT = "執行 09_scripts\\setup.ps1"
+SETUP_HINT = "執行 scripts\\setup.ps1"
 
 
 @dataclass
@@ -69,7 +69,7 @@ def check_cuda() -> Check:
     except ImportError:
         return Check("cuda", False, "torch 未安裝", SETUP_HINT)
     if not torch.cuda.is_available():
-        return Check("cuda", False, f"torch {torch.__version__} 無法使用 GPU", "安裝 CUDA 版 torch（見 09_scripts\\setup.ps1）")
+        return Check("cuda", False, f"torch {torch.__version__} 無法使用 GPU", "安裝 CUDA 版 torch（見 scripts\\setup.ps1）")
     return Check("cuda", True, f"torch {torch.__version__} / {torch.cuda.get_device_name(0)}")
 
 
@@ -124,9 +124,14 @@ def check_ffmpeg_encoders() -> Check:
 
 
 def check_remotion() -> Check:
-    pkg = ROOT / "remotion" / "node_modules" / "remotion" / "package.json"
-    if not pkg.is_file() or not find_tool("remotion"):
-        return Check("remotion", False, "remotion/node_modules 未安裝", "在 remotion\\ 執行 npm install")
+    candidates = [
+        ROOT / "remotion" / "node_modules" / "remotion" / "package.json",
+        ROOT / "node_modules" / "remotion" / "package.json",
+        ROOT / "packages" / "remotion" / "node_modules" / "remotion" / "package.json",
+    ]
+    pkg = next((p for p in candidates if p.is_file()), None)
+    if not pkg or not find_tool("remotion"):
+        return Check("remotion", False, "remotion 未安裝", "在 remotion\\ 執行 npm install")
     version = json.loads(pkg.read_text(encoding="utf-8")).get("version", "?")
     return Check("remotion", True, version)
 
@@ -149,9 +154,16 @@ def capcut_draft_dirs() -> list[Path]:
 
 
 def check_capcut_app() -> Check:
-    found = [str(p) for p in capcut_draft_dirs() if p.is_dir()]
-    if found:
-        return Check("capcut-app", True, found[0], required=False)
+    inaccessible = False
+    for path in capcut_draft_dirs():
+        try:
+            if path.is_dir():
+                return Check("capcut-app", True, str(path), required=False)
+        except OSError:
+            # CapCut 為選用項目，受限的使用者資料夾不可中斷 doctor。
+            inaccessible = True
+    if inaccessible:
+        return Check("capcut-app", False, "草稿資料夾無法存取", "檢查 CapCut 使用者資料夾權限", required=False)
     return Check("capcut-app", False, "找不到草稿資料夾", "開啟 CapCut 一次並建立任一專案", required=False)
 
 

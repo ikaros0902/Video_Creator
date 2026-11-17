@@ -1,0 +1,21 @@
+{% extends 'base.html.j2' %}{% from 'macros.html.j2' import clip %}
+{% block body %}
+{% set art_width = (safe_width - 140) * 38 / 77 %}{% set info_width = safe_width - 140 - art_width %}
+{% call clip('kick',1,D,'left:' ~ margin ~ 'px;top:80px;','kicker') %}{{ d.get('kicker','FULL ASSEMBLY BATCH VALIDATION') }}{% endcall %}
+{% call clip('head',2,D,'left:' ~ margin ~ 'px;top:125px;font-size:56px;','t') %}{{ d.title }}{% endcall %}
+{% call clip('chassis',3,D,'left:' ~ (margin + 20) ~ 'px;top:240px;width:' ~ art_width ~ 'px;height:480px;','hide') %}{% include 'art/chassis.svg' %}{% endcall %}
+{% call clip('info_card',4,D,'left:' ~ (margin + 100 + art_width) ~ 'px;top:240px;width:' ~ info_width ~ 'px;height:480px;padding:36px;','card hide') %}
+<div class="t" style="font-size:36px;color:{{ c.accent }};margin-bottom:16px">{{ d.get('depth_label','Assembly Hierarchy') }}</div>
+<div class="l" style="font-size:26px;margin-bottom:30px">Recursive tree traversal detects nested sheet metal bodies.</div>
+<div style="font-size:80px;font-weight:700;color:{{ c.positive }};margin-bottom:10px"><span id="chassis_cnt">0</span> / {{ d.get('count',24)|int }}</div>
+<div class="l" style="font-size:26px;color:{{ c.positive }};margin-bottom:24px">Parts Processed</div>
+<div style="width:100%;height:16px;background:{{ c.border }};border-radius:8px;overflow:hidden"><div id="pbar" style="width:0%;height:100%;background:{{ c.positive }};border-radius:8px"></div></div>
+<div id="res_badge" class="hide" style="margin-top:24px;padding:16px 24px;border:1.5px solid {{ c.positive }};border-radius:12px;font-size:26px;font-weight:700;color:{{ c.positive }};text-align:center">{{ d.result_line }}</div>
+{% endcall %}
+{% endblock %}
+{% block script %}
+{% set at=cue(d.get('at_word'),D*0.75) %}
+show("#kick",0.1); show("#head",0.2); show("#chassis",0.5,{scale:0.95,y:0}); show("#info_card",0.8,{x:30,y:0});
+let counter={n:0,p:0}; tl.to(counter,{n:{{ d.get('count',24)|int }},p:100,duration:{{ [at-1.2,1.0]|max }},ease:"power1.inOut",onUpdate:()=>{document.getElementById("chassis_cnt").textContent=Math.round(counter.n);document.getElementById("pbar").style.width=counter.p+"%";}},1.2);
+show("#res_badge",{{ at }},{scale:0.9,y:0});
+{% endblock %}

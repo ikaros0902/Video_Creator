@@ -1,0 +1,21 @@
+{% extends 'base.html.j2' %}{% from 'macros.html.j2' import clip, inset %}
+{% block body %}
+{% set card_width = (safe_width - 80) * 0.475 %}{% set inset_width = safe_width - 80 - card_width %}{% set inset_left = margin + card_width + 80 %}
+{% call clip('head',1,D,'left:' ~ margin ~ 'px;top:80px;','h1') %}{{ d.heading }}{% endcall %}
+{% for card in d.cards %}{% set i=loop.index0 %}
+{% call clip('card' ~ i,2+i,D,'left:' ~ margin ~ 'px;top:' ~ (200+i*225) ~ 'px;width:' ~ card_width ~ 'px;height:195px;','card hide') %}
+<div class="num" style="font-size:34px;position:absolute;left:32px;top:28px">0{{ i+1 }}</div>
+<div class="t" style="font-size:44px;position:absolute;left:110px;right:24px;top:22px">{{ card.title }}</div>
+<div class="l" style="font-size:30px;position:absolute;left:110px;top:92px;right:24px">{{ card.label }}</div>{% endcall %}{% endfor %}
+{{ inset(d,images,D,'left:' ~ inset_left ~ 'px;top:200px;width:' ~ inset_width ~ 'px;height:600px;',6) }}
+{% call clip('icap',7,D,'left:' ~ inset_left ~ 'px;top:820px;width:' ~ inset_width ~ 'px;','cap hide') %}{{ d.inset.get('caption','') }}{% endcall %}
+{% endblock %}
+{% block script %}
+show("#head", 0.1);
+{% for card in d.cards %}{% set i=loop.index0 %}{% set at=cue(card.get('at_word'),1.0+i*3) %}
+show("#card{{ i }}", {{ at }}, {x: -40, y: 0});
+tl.to("#card{{ i }}", {borderColor:{{ c.accent|tojson }},duration:0.3}, {{ at }});
+{% if i %}tl.to("#card{{ i-1 }}", {borderColor:{{ c.border|tojson }},duration:0.3}, {{ at }});{% endif %}{% endfor %}
+{% set at=cue(d.inset.get('at_word'),D*0.6) %}
+show("#inset", {{ at }}, {scale:0.96,y:0}); show("#icap", {{ at+0.2 }});
+{% endblock %}

@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parent.parent
 LOCAL_BIN_DIRS = (
     ROOT / "tools" / "ffmpeg" / "bin",
     ROOT / "node_modules" / ".bin",
+    ROOT / "packages" / "remotion" / "node_modules" / ".bin",
     ROOT / "remotion" / "node_modules" / ".bin",
     ROOT / ".venv" / "Scripts",
 )

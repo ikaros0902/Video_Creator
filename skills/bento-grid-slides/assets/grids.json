@@ -1,0 +1,45 @@
+{
+  "columns": 12,
+  "layouts": {
+    "hero_three": [
+      {
+        "column": 0,
+        "row": 0,
+        "span": 8,
+        "rows": 2
+      },
+      {
+        "column": 8,
+        "row": 0,
+        "span": 4,
+        "rows": 1
+      },
+      {
+        "column": 8,
+        "row": 1,
+        "span": 4,
+        "rows": 1
+      }
+    ],
+    "three_equal": [
+      {
+        "column": 0,
+        "row": 0,
+        "span": 4,
+        "rows": 1
+      },
+      {
+        "column": 4,
+        "row": 0,
+        "span": 4,
+        "rows": 1
+      },
+      {
+        "column": 8,
+        "row": 0,
+        "span": 4,
+        "rows": 1
+      }
+    ]
+  }
+}
