@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import re
+import sys
 from pathlib import Path
 
 import cv2
@@ -82,7 +83,7 @@ def contact_sheets(thumbs: list[tuple[float, np.ndarray]], out_dir: Path) -> lis
     names = []
     for k in range(0, len(thumbs), per):
         chunk = [_label(img, f"{t:6.1f}s") for t, img in thumbs[k:k + per]]
-        h, w = chunk[0].shape[:2]
+        _h, _w = chunk[0].shape[:2]
         blank = np.zeros_like(chunk[0])
         while len(chunk) % SHEET_COLS:
             chunk.append(blank)
@@ -149,7 +150,13 @@ def main(argv: list[str]) -> int:
     results = []
     for i, rec in enumerate(proj.recordings, 1):
         rec_id = f"rec{i:02d}"
+        from vc.pipeline_safety import file_hash
+        source_hash = file_hash(rec)
         r = analyze(rec, proj.work / "recordings" / rec_id, rec_id, every)
+        if source_hash != file_hash(rec):
+            print(f"{rec_id} 在匯入期間變更，請重新執行。", file=sys.stderr)
+            return 1
+        r["source_sha256"] = source_hash
         r["active_ranges"] = active_ranges(r["activity"], r["activity_step_s"])
         results.append(r)
         p = r["probe"]

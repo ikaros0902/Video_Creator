@@ -244,7 +244,7 @@ def make_cues(words: list[dict], max_chars: int = CUE_MAX_CHARS, min_s: float = 
 
 
 def srt_time(t: float) -> str:
-    ms = int(round(t * 1000))
+    ms = round(t * 1000)
     h, ms = divmod(ms, 3600_000)
     m, ms = divmod(ms, 60_000)
     s, ms = divmod(ms, 1000)
@@ -259,7 +259,12 @@ def to_srt(cues: list[dict]) -> str:
 # ---------- 主流程 ----------
 
 def transcribe_all(script: Script, vdir: Path, manifest: dict) -> dict[str, dict]:
-    from vc.tools import WHISPER_DIR, configure_model_cache, detect_torch_device, find_tool
+    from vc.tools import (
+        WHISPER_DIR,
+        configure_model_cache,
+        detect_torch_device,
+        find_tool,
+    )
 
     configure_model_cache()
     os.environ["PATH"] = str(Path(find_tool("ffmpeg")).parent) + os.pathsep + os.environ["PATH"]
@@ -320,6 +325,12 @@ def main(argv: list[str]) -> int:
     v = script.meta.voice
     vdir = voice_dir(proj.work, make_backend(v.engine, v.name, v.rate))
     manifest = json.loads((vdir / "manifest.json").read_text(encoding="utf-8"))
+    from vc.pipeline_safety import check_voice, script_fingerprint, voice_fingerprint
+    try:
+        check_voice(script, manifest, vdir)
+    except (ValueError, OSError, KeyError) as exc:
+        print(f"語音資料無效：{exc}，請重新執行 vc voice", file=sys.stderr)
+        return 1
     if manifest.get("rate") != v.rate:
         print(f"配音的語速 {manifest.get('rate')} 和 script.json 的 {v.rate} 不同，先執行 vc voice", file=sys.stderr)
         return 1
@@ -327,8 +338,6 @@ def main(argv: list[str]) -> int:
     result = build(script, manifest, transcribe_all(script, vdir, manifest))
     out_dir = proj.work / "align"
     out_dir.mkdir(parents=True, exist_ok=True)
-    (out_dir / "words.json").write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
-    (out_dir / "preview.srt").write_text(preview_srt(result), encoding="utf-8")
 
     bad = []
     print(f"{'場景':<6}{'WER':>7}  字幕數  缺時間的標註字")
@@ -343,6 +352,10 @@ def main(argv: list[str]) -> int:
     if bad:
         print(f"沒通過（WER > {WER_MAX:.0%} 或標註字找不到時間）：{', '.join(bad)}")
         return 1
+    result.update(valid=True, voice_fingerprint=voice_fingerprint(manifest, vdir), script_fingerprint=script_fingerprint(script))
+    from vc.pipeline_safety import atomic_write
+    atomic_write(out_dir / "words.json", json.dumps(result, ensure_ascii=False, indent=2).encode("utf-8"))
+    atomic_write(out_dir / "preview.srt", preview_srt(result).encode("utf-8"))
     print("全部通過。")
     return 0
 

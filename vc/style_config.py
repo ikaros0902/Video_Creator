@@ -36,12 +36,12 @@ def contrast_ratio(first: str, second: str) -> float:
 
 def validate_style(config: dict) -> dict:
     if not isinstance(config, dict) or not isinstance(config.get("tokens"), dict):
-        raise ValueError("Set style.tokens to an object.")
+        raise ValueError("Set style.tokens to an object.")  # noqa: TRY004 - 維持輸入驗證介面
     result = copy.deepcopy(config)
     tokens = result["tokens"]
     colors = tokens.get("colors")
     if not isinstance(colors, dict):
-        raise ValueError("Set tokens.colors to an object.")
+        raise ValueError("Set tokens.colors to an object.")  # noqa: TRY004 - 維持輸入驗證介面
     for key in COLOR_KEYS:
         value = colors.get(key)
         if not isinstance(value, str) or not re.fullmatch(r"#[0-9a-fA-F]{6}", value):
@@ -61,6 +61,9 @@ def validate_style(config: dict) -> dict:
             raise ValueError(f"Use plain font family names in {key}.")
     _number(typography.get("base_size_px"), "base_size_px", 18, 60)
     _number(typography.get("scale_ratio"), "scale_ratio", 1, 2)
+    for key, low, high in (("line_height", 1, 2), ("letter_spacing_px", -2, 8), ("content_gap_px", 8, 120)):
+        if key in typography:
+            _number(typography[key], key, low, high)
     _number(surface.get("card_corner_radius"), "card_corner_radius", 0, 64)
     _number(surface.get("border_width"), "border_width", 0, 8)
     _number(spacing.get("safe_margin_px"), "safe_margin_px", 60, 160)
@@ -90,7 +93,7 @@ def project_visual_settings(project_root: Path) -> tuple[dict, dict]:
     if cfg is None:
         cfg = {}
     if not isinstance(cfg, dict):
-        raise ValueError("Set project.yaml to an object.")
+        raise ValueError("Set project.yaml to an object.")  # noqa: TRY004 - 維持輸入驗證介面
     style = load_style(cfg.get("style", "executive_navy"), project_root)
     mode = cfg.get("camera_mode", "fixed")
     if mode not in ("fixed", "dynamic", "cinematic"):

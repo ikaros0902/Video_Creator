@@ -14,7 +14,7 @@ const Smoke: React.FC = () => {
 };
 
 const defaultMain: MainProps = {
-  variant: "internal", fps: 30, size: [1920, 1080], total_frames: 30, rec_size: [1920, 1080],
+  variant: "main", fps: 30, size: [1920, 1080], total_frames: 30, rec_size: [1920, 1080],
   audio: [], cues: [], scenes: [],
 };
 

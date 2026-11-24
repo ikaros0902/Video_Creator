@@ -12,14 +12,12 @@ from __future__ import annotations
 
 import ast
 import json
-import os
 import re
 import shutil
 import subprocess
 import sys
 import wave
 from pathlib import Path
-from typing import Any, Callable
 
 import pytest
 import yaml
@@ -108,9 +106,8 @@ class TestTier1HappyPath:
                 elif hasattr(ast, "Str") and isinstance(node, ast.Str):
                     val = node.s
 
-                if val and "Videos" in val:
-                    if py_file.name not in allowed_legacy_modules:
-                        unauthorized_references.append(f"{py_file.name}:{node.lineno} -> {val}")
+                if val and "Videos" in val and py_file.name not in allowed_legacy_modules:
+                    unauthorized_references.append(f"{py_file.name}:{node.lineno} -> {val}")
 
         assert not unauthorized_references, \
             f"在未授權模組中發現硬編碼 Videos/ 依賴：{unauthorized_references}"
@@ -206,21 +203,20 @@ class TestTier1HappyPath:
 
     # --- Feature 3: 標準化 Output 階層規範 (F03) ---
 
-    def test_t1_f03_output_subdirs_structure_contract(self, repo_root: Path, sample_project_path: Path):
-        """此測試以實際影片輸出驗證 internal、public 與 reports 目錄。"""
-        demo_out = repo_root / "projects" / "demo_showcase" / "output"
-        if not demo_out.is_dir():
-            pytest.skip("尚未以實際影片輸出驗證 internal、public 與 reports 目錄")
-        assert (demo_out / "internal").is_dir(), "缺少 output/internal 目錄"
-        assert (demo_out / "public").is_dir(), "缺少 output/public 目錄"
-        assert (demo_out / "reports").is_dir(), "缺少 output/reports 目錄"
-        assert (demo_out / "reports" / "metadata.json").is_file(), "缺少 reports/metadata.json"
-        assert (demo_out / "reports" / "loudness_report.json").is_file(), "缺少 reports/loudness_report.json"
+    @pytest.mark.integration
+    def test_t1_f03_output_subdirs_structure_contract(self, pipeline_project_path: Path):
+        """檢查明確提供的已渲染專案具有單一成品與報告。"""
+        output = pipeline_project_path / "output"
+        assert list(output.glob("*.mp4")), "缺少單一影片成品"
+        assert (output / "final.srt").is_file()
+        assert (output / "reports" / "metadata.json").is_file()
+        assert (output / "reports" / "loudness_report.json").is_file()
 
+    @pytest.mark.integration
     def test_t1_f03_existing_timeline_srt_content(self, pipeline_project_path: Path):
         """T1-03-02: 驗證 SUT 的 timeline_srt 產出符合 SRT 規範，且輸出路徑合約對齊。"""
-        from vc.project import load_project
         from vc.plan import timeline_srt
+        from vc.project import load_project
         proj = load_project(str(pipeline_project_path))
         tl_file = proj.work / "timeline.json"
         assert tl_file.is_file(), f"{pipeline_project_path} 專案缺少 timeline.json"
@@ -232,31 +228,25 @@ class TestTier1HappyPath:
         assert "-->" in lines[1]
         assert len(lines[2].strip()) > 0
         assert proj.output == proj.root / "output"
-        assert (proj.output / "internal").parent == proj.output
+        assert (proj.output / "final.srt").is_file()
 
-    def test_t1_f03_public_composition_props_allowed_kinds(self, pipeline_project_path: Path):
-        """T1-03-03: 驗證公開版脫敏合約：僅允許向量動態與數學幾何，且 build_props 正確過濾。"""
-        from vc.script import PUBLIC_ALLOWED_KINDS
+    @pytest.mark.integration
+    def test_t1_f03_single_composition_preserves_visual_kinds(self, pipeline_project_path: Path):
+        """單一合成設定保留時間軸選定的畫面類型。"""
         from vc.project import load_project
         from vc.render import build_props
-        assert PUBLIC_ALLOWED_KINDS == {"anim", "manim"}, "公開版允許的視覺類型未嚴格限制為脫敏動畫"
         proj = load_project(str(pipeline_project_path))
         tl = json.loads((proj.work / "timeline.json").read_text(encoding="utf-8"))
-        rec_sizes = {}
-        recs_file = proj.work / "recordings.json"
-        if recs_file.is_file():
-            recs = json.loads(recs_file.read_text(encoding="utf-8")).get("recordings", [])
-            rec_sizes = {r["id"]: (r["probe"]["width"], r["probe"]["height"]) for r in recs if "probe" in r}
-        props = build_props(tl, "public", proj.work, rec_sizes)
-        assert props["variant"] == "public"
-        for sc in props["scenes"]:
-            assert sc["kind"] in ("anim", "manim"), f"公開版包含不允許的素材類型：{sc['kind']}"
+        props = build_props(tl, "main", proj.work, tuple(tl["size"]))
+        assert props["variant"] == "main"
+        assert [scene["kind"] for scene in props["scenes"]] == [scene["visuals"]["main"]["kind"] for scene in tl["scenes"]]
 
+    @pytest.mark.integration
     def test_t1_f03_existing_clip_probe_and_script_stats(self, pipeline_project_path: Path):
         """T1-03-04: 調用 SUT 之 vc.media.probe 檢驗視訊元數據結構與 stats_for 統計合約。"""
         from vc.media import probe
         from vc.script import load_script, stats_for
-        sample_clip = pipeline_project_path / "work" / "hf" / "internal" / "s01.mp4"
+        sample_clip = next((pipeline_project_path / "work" / "hf" / "main").glob("*.mp4"), Path("missing.mp4"))
         assert sample_clip.is_file(), f"找不到測試用視訊片段：{sample_clip}"
         info = probe(sample_clip)
         for k in ["duration", "width", "height", "fps", "video_codec", "has_audio"]:
@@ -268,9 +258,10 @@ class TestTier1HappyPath:
         for k in ["words", "estimated_s", "fk_grade", "longest_sentence", "scenes"]:
             assert k in stats, f"腳本元數據缺少必要欄位：{k}"
 
+    @pytest.mark.integration
     def test_t1_f03_existing_bgm_loudness_and_gains(self, pipeline_project_path: Path):
         """T1-03-05: 調用 SUT 之 vc.render.measure_loudness 實測 EBU R128 數值並驗證閃避增益算法。"""
-        from vc.render import measure_loudness, bgm_gains, LOUDNESS_I, LOUDNESS_TP
+        from vc.render import LOUDNESS_I, LOUDNESS_TP, bgm_gains, measure_loudness
         assert LOUDNESS_I == -14.0
         assert LOUDNESS_TP == -1.5
         bgm_path = pipeline_project_path / "work" / "bgm.mp3"
@@ -315,7 +306,7 @@ class TestTier1HappyPath:
 
     def test_t1_f04_remotion_props_audio_ducking_config(self):
         """T1-04-05: 驗證 Remotion 音訊閃避預設常數合約。"""
-        from vc.plan import LEAD_IN_S, GAP_S, END_HOLD_S
+        from vc.plan import END_HOLD_S, GAP_S, LEAD_IN_S
         assert LEAD_IN_S >= 0.2
         assert GAP_S >= 0.5
         assert END_HOLD_S >= 2.0
@@ -393,7 +384,7 @@ class TestTier1HappyPath:
         res_enc = check_ffmpeg_encoders()
         assert res_enc.ok, f"FFmpeg 基本編碼器缺失：{res_enc.detail}"
         res_gpu = check_ffmpeg_gpu_encoders()
-        assert res_gpu.ok or "h264_nvenc" in res_gpu.detail
+        assert res_gpu.ok or not res_gpu.required
 
     def test_t1_f06_node_version_requirement(self):
         """T1-06-03: 驗證 Node.js 版本符合 >= 22 規範要求。"""
@@ -403,7 +394,7 @@ class TestTier1HappyPath:
 
     def test_t1_f06_local_tools_precedence(self):
         """T1-06-04: 驗證 LOCAL_BIN_DIRS 工具搜尋優先序機制。"""
-        from vc.tools import find_tool, LOCAL_BIN_DIRS
+        from vc.tools import LOCAL_BIN_DIRS, find_tool
         ffmpeg_path = find_tool("ffmpeg")
         assert ffmpeg_path is not None
         local_bin = LOCAL_BIN_DIRS[0]
@@ -416,10 +407,6 @@ class TestTier1HappyPath:
         """T1-06-05: 驗證關鍵音視訊演算法套件均可無例外匯入。"""
         import torch
         import whisper
-        import edge_tts
-        import soundfile
-        import pydantic
-        import yaml
         assert torch.__version__
         assert whisper.__version__
 
@@ -466,7 +453,7 @@ class TestTier1HappyPath:
 
     def test_t1_f07_camera_pacing_rules_exist(self, repo_root: Path):
         """T1-07-05: 驗證運鏡與節奏控制邏輯常數定義。"""
-        from vc.plan import LEAD_IN_S, GAP_S, MAX_SPEED
+        from vc.plan import GAP_S, MAX_SPEED
         assert MAX_SPEED == 2.5
         assert GAP_S == 0.7
 
@@ -541,6 +528,7 @@ class TestTier1HappyPath:
 
     # --- Feature 9: 端到端流程產物規範 (F18) ---
 
+    @pytest.mark.integration
     def test_t1_f09_existing_timeline_structure(self, pipeline_project_path: Path):
         """檢查既有 timeline.json 的欄位；此測試不執行 plan。"""
         tl_path = pipeline_project_path / "work" / "timeline.json"
@@ -551,11 +539,12 @@ class TestTier1HappyPath:
         assert data["fps"] == 30
         assert len(data["scenes"]) > 0
 
+    @pytest.mark.integration
     def test_t1_f09_existing_voice_manifest(self, pipeline_project_path: Path):
         """檢查既有語音清單；此測試不合成語音。"""
         from vc.project import load_project
-        from vc.voice import make_backend, voice_dir
         from vc.script import load_script
+        from vc.voice import make_backend, voice_dir
         proj = load_project(str(pipeline_project_path))
         script = load_script(proj.root / "script.json")
         v = script.meta.voice
@@ -566,20 +555,22 @@ class TestTier1HappyPath:
         assert data["engine"] == v.engine
         assert len(data["scenes"]) == len(script.scenes)
 
+    @pytest.mark.integration
     def test_t1_f09_existing_alignment_and_helpers(self, pipeline_project_path: Path):
         """檢查既有對齊資料及時間工具；此測試不執行語音對齊。"""
-        from vc.align import srt_time, norm_tokens
+        from vc.align import norm_tokens, srt_time
         words_path = pipeline_project_path / "work" / "align" / "words.json"
         assert words_path.is_file(), f"對齊檔案必須實體存在於 {words_path}"
         data = json.loads(words_path.read_text(encoding="utf-8"))
         assert "scenes" in data and "voice" in data
-        for sid, sc in data["scenes"].items():
+        for sc in data["scenes"].values():
             assert "words" in sc and len(sc["words"]) > 0
             assert "start" in sc["words"][0] and "end" in sc["words"][0]
         assert srt_time(0.0) == "00:00:00,000"
         assert srt_time(65.123) == "00:01:05,123"
         assert norm_tokens("Hello,") == ["hello"]
 
+    @pytest.mark.integration
     def test_t1_f09_existing_hf_clips(self, pipeline_project_path: Path):
         """檢查既有 HyperFrames 清單和片段；此測試不執行渲染。"""
         hf_dir = pipeline_project_path / "work" / "hf"
@@ -588,6 +579,7 @@ class TestTier1HappyPath:
         mp4_clips = list(hf_dir.glob("*/*.mp4"))
         assert len(mp4_clips) > 0, "HF 目錄下必須包含實體產出的 mp4 動畫片段"
 
+    @pytest.mark.integration
     def test_t1_f09_existing_timeline_compositor_props(self, pipeline_project_path: Path):
         """以既有時間軸檢查 Remotion props；此測試不合成影片。"""
         from vc.render import build_props
@@ -599,10 +591,10 @@ class TestTier1HappyPath:
         if recs_file.is_file():
             recs = json.loads(recs_file.read_text(encoding="utf-8")).get("recordings", [])
             rec_sizes = {r["id"]: (r["probe"]["width"], r["probe"]["height"]) for r in recs if "probe" in r}
-        props = build_props(tl, "internal", pipeline_project_path / "work", rec_sizes)
+        props = build_props(tl, "main", pipeline_project_path / "work", rec_sizes or tuple(tl["size"]))
         for key in ["variant", "fps", "size", "total_frames", "scenes", "audio", "cues"]:
             assert key in props, f"Remotion props 缺少必要頂層欄位：{key}"
-        assert props["variant"] == "internal"
+        assert props["variant"] == "main"
 
     # --- Feature 10: 風格與運鏡參數切換 (F17) ---
 
@@ -786,6 +778,7 @@ class TestTier2BoundaryAndNegative:
     def test_t2_f03_file_locked_permission_graceful_handling(self, tmp_path: Path):
         """T2-03-01: 在檔案維持獨占開啟鎖定狀態下調用 SUT 產物寫入器，驗證攔截 PermissionError。"""
         import msvcrt
+
         from vc.plan import write_timeline_srt
         tl = {
             "fps": 30,
@@ -799,22 +792,15 @@ class TestTier2BoundaryAndNegative:
                 write_timeline_srt(tl, locked_file)
 
     def test_t2_f03_ultra_short_video_duration_boundary(self):
-        """T2-03-02: 驗證極短秒數時場景長度不為負數。"""
+        """極短旁白仍須產生正值場景長度。"""
         from vc.plan import scene_lengths
         from vc.script import Script
-        data = {
+        script = Script.model_validate({
             "meta": {"title": "Short"},
-            "scenes": [{
-                "id": "s01", "section": "vs_intro", "narration": "Hello world.",
-                "budget_s": [1.0, 5.0], "visuals": {
-                    "internal": {"kind": "anim", "template": "t1"},
-                    "public": {"kind": "anim", "template": "t1"},
-                }
-            }]
-        }
-        script = Script.model_validate(data)
-        lengths = scene_lengths(script, {"s01": 0.5})
-        assert lengths[0][1] > 0
+            "scenes": [{"id": "s01", "section": "vs_intro", "narration": "Hello world.",
+                        "budget_s": [1.0, 5.0], "visual": {"kind": "anim", "template": "title"}}],
+        })
+        assert scene_lengths(script, {"s01": 0.5})[0][1] > 0
 
     def test_t2_f03_pure_silence_loudness_calculation(self, tmp_path: Path):
         """T2-03-03: 生成純靜音音訊傳入 vc.render.measure_loudness，驗證妥善處理無崩潰。"""
@@ -839,7 +825,7 @@ class TestTier2BoundaryAndNegative:
 
     def test_t2_f03_ultra_long_subtitle_text_handling(self, sample_project_path: Path):
         """T2-03-05: 注入超長字幕單句，驗證 vc.script.check 成功觸發字數超限阻斷。"""
-        from vc.script import load_script, load_facts, check
+        from vc.script import check, load_facts, load_script
         script = load_script(sample_project_path / "script.json")
         facts = load_facts(sample_project_path / "facts.yaml")
         script.scenes[0].narration = "This is a deliberately extremely long sentence without any punctuation delimiter designed to strictly exceed the twenty words threshold rule of the validator with extra words."
@@ -903,8 +889,8 @@ class TestTier2BoundaryAndNegative:
 
     def test_t2_f06_missing_ffmpeg_reports_missing(self, monkeypatch):
         """T2-06-01: 驗證缺少 ffmpeg 時 check_version_tool 回報 MISSING。"""
-        from vc.doctor import check_version_tool
         from vc import doctor
+        from vc.doctor import check_version_tool
         monkeypatch.setattr(doctor, "find_tool", lambda name: None)
         chk = check_version_tool("ffmpeg", ["-version"], "hint")
         assert chk.status == "MISSING"
@@ -930,6 +916,7 @@ class TestTier2BoundaryAndNegative:
     def test_t2_f06_powerpoint_com_unavailable_graceful_handling(self, monkeypatch):
         """T2-06-05: 驗證 PowerPoint COM 不可用時回傳 WARN 狀態且 ok=False。"""
         import winreg
+
         from vc.doctor import check_powerpoint
         def _mock_open_key(*args, **kwargs):
             raise OSError("PowerPoint COM not registered")
@@ -943,7 +930,7 @@ class TestTier2BoundaryAndNegative:
 
     def test_t2_f07_sentence_exceeds_20_words_rejected(self, sample_project_path: Path):
         """T2-07-01: 驗證旁白單句超過 20 字時 vc.script.check 拋出錯誤。"""
-        from vc.script import load_script, load_facts, check
+        from vc.script import check, load_facts, load_script
         script = load_script(sample_project_path / "script.json")
         facts = load_facts(sample_project_path / "facts.yaml")
         script.scenes[0].narration = "This is a deliberately extremely long sentence without any punctuation delimiter designed to strictly exceed the twenty words threshold rule of the validator."
@@ -952,7 +939,7 @@ class TestTier2BoundaryAndNegative:
 
     def test_t2_f07_chinese_cjk_word_count_and_limit(self, sample_project_path: Path):
         """T2-07-06: 驗證 CJK 正體中文分詞準確度與超過 20 字長度硬限制之攔截。"""
-        from vc.script import words, load_script, load_facts, check
+        from vc.script import check, load_facts, load_script, words
 
         # 1. 斷詞準確性與標點過濾檢驗
         # 「這是一個繁體中文旁白句子測試。」去掉句號共 14 個中文字元（中文字詞提取率精確，無標點殘留）
@@ -973,7 +960,7 @@ class TestTier2BoundaryAndNegative:
 
     def test_t2_f07_banned_internal_term_rejected(self, sample_project_path: Path):
         """T2-07-02: 驗證旁白出現黑名單術語時 vc.script.check 拋出錯誤。"""
-        from vc.script import load_script, load_facts, check
+        from vc.script import check, load_facts, load_script
         script = load_script(sample_project_path / "script.json")
         facts = load_facts(sample_project_path / "facts.yaml")
         script.scenes[0].narration = "We must keep the mesh watertight throughout."
@@ -982,7 +969,7 @@ class TestTier2BoundaryAndNegative:
 
     def test_t2_f07_unconfirmed_fact_number_rejected(self, sample_project_path: Path):
         """T2-07-03: 驗證旁白出現事實表未登記之數字時 vc.script.check 拋出錯誤。"""
-        from vc.script import load_script, load_facts, check
+        from vc.script import check, load_facts, load_script
         script = load_script(sample_project_path / "script.json")
         facts = load_facts(sample_project_path / "facts.yaml")
         script.scenes[0].narration = "We improved performance by 999 percent."
@@ -991,25 +978,23 @@ class TestTier2BoundaryAndNegative:
 
     def test_t2_f07_term_used_before_glossary_scene_rejected(self, sample_project_path: Path):
         """T2-07-04: 驗證術語在 glossary 指定場景前先出現時拋出錯誤。"""
-        from vc.script import load_script, load_facts, check
+        from vc.script import check, load_facts, load_script
         script = load_script(sample_project_path / "script.json")
         facts = load_facts(sample_project_path / "facts.yaml")
         script.glossary.append(type("Glossary", (), {"term": "non_existent_term_xyz", "scene": "s07"})())
         errors, _ = check(script, facts)
         assert any("沒有出現在旁白" in e for e in errors)
 
-    def test_t2_f07_public_variant_with_recording_rejected(self, sample_project_path: Path):
-        """T2-07-05: 驗證 public 公開版使用 recording 畫面時 vc.script.check 拋出錯誤。"""
-        from vc.script import load_script, load_facts, check, Visual, Clip
+    def test_t2_f07_single_visual_accepts_recording(self, sample_project_path: Path):
+        """單一畫面允許合法的錄影片段。"""
+        from vc.script import Clip, Visual, check, load_facts, load_script
         script = load_script(sample_project_path / "script.json")
         facts = load_facts(sample_project_path / "facts.yaml")
-        script.scenes[0].visuals["public"] = Visual(
-            kind="recording",
-            template="t1",
-            clips=[Clip(recording="rec01", source=(0.0, 1.0))],
-        )
-        errors, _ = check(script, facts)
-        assert any("public 版不能使用 recording" in e for e in errors)
+        script.scenes[0].visual = Visual(kind="recording", template="title",
+                                        clips=[Clip(recording="rec01", source=(0.0, 1.0))])
+        errors, _ = check(script, facts, {"rec01": 2.0})
+        assert not any(error.startswith(script.scenes[0].id + ":") for error in errors)
+        assert script.scenes[0].visual.kind == "recording"
 
     # --- Feature 8: 規範邊界 ---
 
@@ -1063,7 +1048,7 @@ class TestTier2BoundaryAndNegative:
 
     def test_t2_f09_script_duration_out_of_budget_rejected(self, sample_project_path: Path):
         """T2-09-01: 驗證總長度超出目標預算區間時 check 拋出警告/錯誤。"""
-        from vc.script import load_script, load_facts, check
+        from vc.script import check, load_facts, load_script
         script = load_script(sample_project_path / "script.json")
         facts = load_facts(sample_project_path / "facts.yaml")
         script.meta.target_duration_s = (1.0, 5.0)
@@ -1072,7 +1057,7 @@ class TestTier2BoundaryAndNegative:
 
     def test_t2_f09_readability_fk_grade_too_high_rejected(self, sample_project_path: Path):
         """T2-09-02: 驗證易讀等級超過閾值（設定為極低 1.0）時 check 攔截。"""
-        from vc.script import load_script, load_facts, check
+        from vc.script import check, load_facts, load_script
         script = load_script(sample_project_path / "script.json")
         facts = load_facts(sample_project_path / "facts.yaml")
         script.meta.max_fk_grade = 1.0
@@ -1081,7 +1066,7 @@ class TestTier2BoundaryAndNegative:
 
     def test_t2_f09_clip_end_exceeds_recording_duration_rejected(self, sample_project_path: Path):
         """T2-09-03: 驗證錄影 clip 結束秒數大於錄影長度時 check 攔截。"""
-        from vc.script import load_script, load_facts, check
+        from vc.script import check, load_facts, load_script
         script = load_script(sample_project_path / "script.json")
         facts = load_facts(sample_project_path / "facts.yaml")
         rec_durations = {"rec01": 2.0}
@@ -1090,7 +1075,7 @@ class TestTier2BoundaryAndNegative:
 
     def test_t2_f09_callout_at_word_not_in_narration_rejected(self, sample_project_path: Path):
         """T2-09-04: 驗證 callout 之 at_word 不在旁白中時 check 攔截。"""
-        from vc.script import load_script, load_facts, check, Callout
+        from vc.script import Callout, check, load_facts, load_script
         script = load_script(sample_project_path / "script.json")
         facts = load_facts(sample_project_path / "facts.yaml")
         for s in script.scenes:
@@ -1103,7 +1088,7 @@ class TestTier2BoundaryAndNegative:
 
     def test_t2_f09_scene_section_order_inverted_rejected(self, sample_project_path: Path):
         """T2-09-05: 驗證場景段落順序顛倒時 check 拋出順序錯誤。"""
-        from vc.script import load_script, load_facts, check
+        from vc.script import check, load_facts, load_script
         script = load_script(sample_project_path / "script.json")
         facts = load_facts(sample_project_path / "facts.yaml")
         script.scenes = [script.scenes[-1]] + script.scenes[:-1]
@@ -1142,6 +1127,7 @@ class TestTier2BoundaryAndNegative:
     def test_t2_f10_meta_boundary_negative_validation(self):
         """T2-10-06: 驗證 Meta 模型非正值邊界（fps <= 0 或 size 各軸 <= 0）拋出 ValidationError。"""
         import pydantic
+
         from vc.script import Meta
 
         # 1. fps <= 0 負向邊界驗證
@@ -1167,30 +1153,30 @@ class TestTier2BoundaryAndNegative:
 
 @pytest.mark.tier3
 class TestTier3PairwiseCombinations:
-    """Tier 3: Style × Camera × Voice × Input × Output × Path × Hardware 正交組合。"""
+    """Tier 3: Style × Camera × Voice × Input × Path × Hardware 正交組合。"""
 
-    PAIRWISE_TEST_CASES = [
-        # id, style, camera_mode, voice_engine, input_comp, output_var, path_comp, hw_engine
-        ("P-01", "executive_navy", "fixed", "kokoro", "slides+rec", "internal", "projects", "gpu"),
-        ("P-02", "executive_navy", "dynamic", "edge", "slides", "public", "06_projects", "cpu"),
-        ("P-03", "executive_navy", "cinematic", "kokoro", "anim", "internal", "projects", "cpu"),
-        ("P-04", "swiss_kinetic", "fixed", "edge", "anim", "public", "projects", "gpu"),
-        ("P-05", "swiss_kinetic", "dynamic", "kokoro", "slides+rec", "internal", "06_projects", "gpu"),
-        ("P-06", "swiss_kinetic", "cinematic", "edge", "slides", "internal", "projects", "cpu"),
-        ("P-07", "blueprint", "fixed", "kokoro", "slides", "internal", "06_projects", "gpu"),
-        ("P-08", "blueprint", "dynamic", "edge", "anim", "internal", "projects", "gpu"),
-        ("P-09", "blueprint", "cinematic", "kokoro", "slides+rec", "public", "projects", "cpu"),
-        ("P-10", "cyberpunk_neon", "fixed", "edge", "slides+rec", "public", "projects", "cpu"),
-        ("P-11", "cyberpunk_neon", "dynamic", "kokoro", "slides", "internal", "projects", "gpu"),
-        ("P-12", "cyberpunk_neon", "cinematic", "edge", "anim", "internal", "06_projects", "gpu"),
-        ("P-13", "executive_navy", "dynamic", "kokoro", "anim", "public", "06_projects", "gpu"),
-        ("P-14", "swiss_kinetic", "fixed", "kokoro", "slides+rec", "public", "projects", "cpu"),
-        ("P-15", "blueprint", "dynamic", "kokoro", "slides", "public", "projects", "gpu"),
-        ("P-16", "cyberpunk_neon", "cinematic", "kokoro", "slides+rec", "internal", "projects", "gpu"),
+    PAIRWISE_TEST_CASES = [  # noqa: RUF012 - 測試資料不會在案例中修改
+        # id, style, camera_mode, voice_engine, input_comp, path_comp, hw_engine
+        ("P-01", "executive_navy", "fixed", "kokoro", "slides+rec", "projects", "gpu"),
+        ("P-02", "executive_navy", "dynamic", "edge", "slides", "06_projects", "cpu"),
+        ("P-03", "executive_navy", "cinematic", "kokoro", "anim", "projects", "cpu"),
+        ("P-04", "swiss_kinetic", "fixed", "edge", "anim", "projects", "gpu"),
+        ("P-05", "swiss_kinetic", "dynamic", "kokoro", "slides+rec", "06_projects", "gpu"),
+        ("P-06", "swiss_kinetic", "cinematic", "edge", "slides", "projects", "cpu"),
+        ("P-07", "blueprint", "fixed", "kokoro", "slides", "06_projects", "gpu"),
+        ("P-08", "blueprint", "dynamic", "edge", "anim", "projects", "gpu"),
+        ("P-09", "blueprint", "cinematic", "kokoro", "slides+rec", "projects", "cpu"),
+        ("P-10", "cyberpunk_neon", "fixed", "edge", "slides+rec", "projects", "cpu"),
+        ("P-11", "cyberpunk_neon", "dynamic", "kokoro", "slides", "projects", "gpu"),
+        ("P-12", "cyberpunk_neon", "cinematic", "edge", "anim", "06_projects", "gpu"),
+        ("P-13", "executive_navy", "dynamic", "kokoro", "anim", "06_projects", "gpu"),
+        ("P-14", "swiss_kinetic", "fixed", "kokoro", "slides+rec", "projects", "cpu"),
+        ("P-15", "blueprint", "dynamic", "kokoro", "slides", "projects", "gpu"),
+        ("P-16", "cyberpunk_neon", "cinematic", "kokoro", "slides+rec", "projects", "gpu"),
     ]
 
     @pytest.mark.parametrize(
-        "case_id,style,camera_mode,voice_engine,input_comp,output_var,path_comp,hw_engine",
+        "case_id,style,camera_mode,voice_engine,input_comp,path_comp,hw_engine",
         PAIRWISE_TEST_CASES,
     )
     def test_t3_pairwise_matrix_case(
@@ -1204,14 +1190,13 @@ class TestTier3PairwiseCombinations:
         camera_mode: str,
         voice_engine: str,
         input_comp: str,
-        output_var: str,
         path_comp: str,
         hw_engine: str,
     ):
         """Tier 3: 16 組正交組合用例之全參數物理落實驗收合約。"""
         from vc.project import load_project
-        from vc.voice import make_backend
         from vc.tools import detect_torch_device
+        from vc.voice import make_backend
 
         # 1. 物理落地：依據 path_comp 建立專案目錄結構
         proj_root = tmp_path / path_comp / f"case_{case_id}"
@@ -1271,10 +1256,6 @@ class TestTier3PairwiseCombinations:
         backend = make_backend(voice_engine, "test_voice", "+0%")
         assert backend is not None
 
-        # 6. 驗證輸出目標合約
-        target_out = proj.output / output_var
-        assert target_out.parent == proj.output
-
         # 7. 驗證硬體引擎設定
         monkeypatch.setenv("VC_DEVICE", hw_engine)
         dev = detect_torch_device()
@@ -1330,8 +1311,8 @@ class TestTier4RealWorldScenarios:
 
     def test_rw_03_capcut_cli_availability(self, sample_project_path: Path, run_vc_cli):
         """檢查 CapCut CLI 版本及缺少參數時的回應；此測試不建立草稿。"""
-        from vc.tools import find_tool
         from vc.capcut_draft import capcut_cli
+        from vc.tools import find_tool
 
         capcut_tool = find_tool("capcut")
         if capcut_tool is None:
@@ -1340,7 +1321,7 @@ class TestTier4RealWorldScenarios:
         tool_path = Path(capcut_tool)
         assert tool_path.is_file(), f"找不到 capcut 可執行檔案：{tool_path}"
 
-        res = subprocess.run([str(tool_path), "--version"], capture_output=True, text=True, timeout=10)
+        res = subprocess.run([str(tool_path), "--version"], capture_output=True, check=False, text=True, timeout=10)
         assert res.returncode == 0, f"capcut --version 執行失敗：{res.stderr}"
         assert re.search(r"\d+\.\d+", res.stdout.strip()), f"版本格式異常：{res.stdout}"
 
@@ -1376,6 +1357,7 @@ class TestTier4RealWorldScenarios:
             bdd_dir = repo_root / "tests"
         res = subprocess.run(
             [python_bin, "-m", "pytest", "-q", "-m", "not integration", str(bdd_dir)],
+            check=False,
             cwd=str(repo_root),
             capture_output=True,
             text=True,

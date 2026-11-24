@@ -12,6 +12,7 @@
 """
 from __future__ import annotations
 
+import itertools
 import json
 import sys
 from pathlib import Path
@@ -36,7 +37,7 @@ class PlanError(ValueError):
 
 
 def _f(seconds: float, fps: int) -> int:
-    return int(round(seconds * fps))
+    return round(seconds * fps)
 
 
 def scene_lengths(script: Script, narration_s: dict[str, float]) -> list[tuple[float, float]]:
@@ -65,7 +66,7 @@ def clip_windows(clips, word_time, lead_s: float, scene_frames: int, fps: int) -
         else:
             groups[-1].append(k)
     bounds = starts + [scene_frames]
-    if any(b2 <= b1 for b1, b2 in zip(bounds, bounds[1:])):
+    if any(b2 <= b1 for b1, b2 in itertools.pairwise(bounds)):
         raise PlanError(f"錄影時間窗的起點沒有遞增：{bounds}")
 
     result: list[dict] = [{} for _ in clips]
@@ -76,7 +77,7 @@ def clip_windows(clips, word_time, lead_s: float, scene_frames: int, fps: int) -
         cum, prev = 0.0, w0
         for k, sl in zip(members, src):
             cum += sl
-            end = w0 + int(round((w1 - w0) * cum / total_src))
+            end = w0 + round((w1 - w0) * cum / total_src)
             frames = end - prev
             out_s = frames / fps
             speed = sl / out_s
@@ -202,10 +203,29 @@ def main(argv: list[str]) -> int:
     vdir = voice_dir(proj.work, make_backend(v.engine, v.name, v.rate))
     manifest = json.loads((vdir / "manifest.json").read_text(encoding="utf-8"))
     aligned = json.loads((proj.work / "align" / "words.json").read_text(encoding="utf-8"))
+    from vc.pipeline_safety import (
+        alignment_is_current,
+        check_ingest,
+        check_voice,
+        script_fingerprint,
+    )
+    try:
+        check_voice(script, manifest, vdir)
+        if not alignment_is_current(aligned, manifest, vdir) or aligned.get("script_fingerprint") != script_fingerprint(script):
+            raise ValueError("對齊結果過期，請重新執行 vc align")
+    except (ValueError, OSError, KeyError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
     if aligned["voice"] != {k: manifest[k] for k in ("engine", "voice", "rate")}:
         print("words.json 和目前的配音不一致，先執行 vc align", file=sys.stderr)
         return 1
-    rec_json = json.loads((proj.work / "recordings.json").read_text(encoding="utf-8"))
+    rec_path = proj.work / "recordings.json"
+    rec_json = json.loads(rec_path.read_text(encoding="utf-8")) if rec_path.is_file() else {"recordings": []}
+    try:
+        check_ingest(proj, rec_json["recordings"], script)
+    except (ValueError, OSError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
     recordings = {r["id"]: r["file"] for r in rec_json["recordings"]}
     voice_files = {sid: str((vdir / sc["file"]).resolve()) for sid, sc in manifest["scenes"].items()}
 
@@ -214,17 +234,18 @@ def main(argv: list[str]) -> int:
     except PlanError as exc:
         print(f"時間軸錯誤：{exc}", file=sys.stderr)
         return 1
-    (proj.work / "timeline.json").write_text(json.dumps(tl, ensure_ascii=False, indent=2), encoding="utf-8")
-    for variant in ("internal", "public"):
-        out = proj.output / variant
-        write_timeline_srt(tl, out / "final.srt")
+    from vc.pipeline_safety import file_hash, visual_fingerprint
+    tl["recording_fingerprints"] = {key: file_hash(Path(path)) for key, path in recordings.items()}
+    tl["script_fingerprint"] = script_fingerprint(script)
+    tl["visual_fingerprint"] = visual_fingerprint(proj.root, script, proj.work)
+    tl["voice_fingerprint"] = aligned["voice_fingerprint"]
 
     fps = tl["fps"]
     print(f"{'場景':<6}{'起點':>8}{'長度':>8}{'旁白':>8}")
     for sc in tl["scenes"]:
         print(f"{sc['id']:<6}{sc['start_frame'] / fps:>7.2f}s{sc['duration_frames'] / fps:>7.2f}s"
               f"{sc['narration_frames'] / fps:>7.2f}s")
-        for c in sc["visuals"]["internal"].get("clips", []):
+        for c in sc["visuals"]["main"].get("clips", []):
             print(f"        clip {c['index']}  {c['source'][0]:>5.1f}–{c['source'][1]:<5.1f}s → "
                   f"{c['duration_frames'] / fps:.2f}s  {c['speed']:.2f}x  停格 {c['freeze_frames'] / fps:.2f}s  {c['label']}")
     lo, hi = script.meta.target_duration_s
@@ -232,6 +253,9 @@ def main(argv: list[str]) -> int:
     if not lo <= tl["total_s"] <= hi:
         print("總長超出目標", file=sys.stderr)
         return 1
+    from vc.pipeline_safety import atomic_write
+    atomic_write(proj.work / "timeline.json", json.dumps(tl, ensure_ascii=False, indent=2).encode("utf-8"))
+    write_timeline_srt(tl, proj.output / "final.srt")
     return 0
 
 

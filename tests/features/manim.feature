@@ -7,14 +7,14 @@ Feature: Manim animations follow the narration
     And the timeline is built
 
   Scenario: Cue words become seconds inside the scene
-    When I make the cue file of scene "s04" for "internal"
+    When I make the cue file of scene "s04" for "main"
     Then the cue "step" is at the time of the word "step"
     And the cue file duration equals the scene length in seconds
     And every cue is inside the scene
 
   Scenario: A missing cue word is rejected
     Given the cue word of "hem" in scene "s04" is "zebra"
-    When I try to make the cue file of scene "s04" for "internal"
+    When I try to make the cue file of scene "s04" for "main"
     Then the cue file is rejected with a message that contains "zebra"
 
   Scenario Outline: Animation that starts late is measured in frames

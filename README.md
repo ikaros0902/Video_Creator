@@ -1,8 +1,8 @@
 # Video_Creator — AI-Native 確定性技術影片自動產製管線
 
-> **從簡報與螢幕錄影，全自動產出影格精準、數據零幻覺、支援 GPU 加速的雙軌 1080p 技術教學影片。**
+> 從簡報與螢幕錄影製作支援 GPU 加速的 1080p 技術教學影片。
 
-`Video_Creator` 結合 **BMAD（敏捷 AI 開發）** 與 **BDD（Gherkin 行為驅動測試）**，徹底解決 AI 剪片「數字亂編、修改台詞就音畫錯位、缺乏雙版本隱私保護」的三大難題。
+`Video_Creator` 使用可驗證的腳本、事實表和旁白時間軸製作單一版本影片。
 
 ## 核心設計亮點
 
@@ -11,9 +11,9 @@
 - **三引擎協同渲染 + 全管線 GPU 加速**：
   - **Manim**（向量幾何與數學原理，FFmpeg `h264_nvenc`）
   - **HyperFrames**（HTML/GSAP 等軸向量與數據字卡，`--gpu --browser-gpu`）
-  - **Remotion**（實機錄影鏡頭推拉、標註框與 EBU R128 `-16 LUFS` 響度合流，`--gl=angle`）
+  - **Remotion**（實機錄影鏡頭推拉、標註框與預設 `-14 LUFS` 響度合流，`--gl=angle`）
   - 全管線支援自動偵測顯卡（NVIDIA CUDA / NVENC、macOS MPS）與 **CPU 確定性自動回退**。
-- **內外雙軌脫敏輸出（`internal` vs `public`）**：同一份 `script.json` 同時控管包含實機錄影的「內部版」，以及 100% 由向量動畫重新繪製、零真實截圖的「公開開源版」。
+- **單一影片輸出**：舊雙版本專案可使用 `vc migrate` 備份並轉換為單一畫面設定。
 - **66 項 BDD 自動化回歸測試**：透過 `pytest-bdd` 守護字詞時間對齊、響度混音比例、錄影變速上限（2.5x）與公開版隱私隔離契約。
 
 ---
@@ -24,10 +24,10 @@
 
 ```powershell
 # 有 NVIDIA 顯卡（自動安裝 CUDA 12.6 PyTorch、FFmpeg 與 Node 依賴）
-powershell -ExecutionPolicy Bypass -File 09_scripts\setup.ps1
+powershell -ExecutionPolicy Bypass -File scripts\setup.ps1
 
 # 無 GPU 或純 CPU 測試環境
-powershell -ExecutionPolicy Bypass -File 09_scripts\setup.ps1 -CpuOnly
+powershell -ExecutionPolicy Bypass -File scripts\setup.ps1 -CpuOnly
 ```
 
 ### 2. 環境檢查與測試門禁
@@ -41,7 +41,7 @@ powershell -ExecutionPolicy Bypass -File 09_scripts\setup.ps1 -CpuOnly
 
 ### 3. 建立你的第一支影片
 
-複製 `06_projects/_sample` 為新專案（新專案會自動被 `.gitignore` 保護，不上傳 GitHub），再依 [`00_docs/00_how_to_use.md`](00_docs/00_how_to_use.md) 與 [`02_workflows/01_new_video_sop.md`](02_workflows/01_new_video_sop.md) 執行 `ingest-ppt`、`ingest-rec`、`voice`、`align`、`plan`、`manim`、`hf`、`fit` 與 `render`。
+複製 `projects/_sample` 為新專案，再依 [使用指南](docs/00_how_to_use.md) 執行管線。影片輸出至 `projects/<project>/output/`。參考影片分析與風格工作區分別見 [分析指南](docs/REFERENCE_ANALYSIS.md) 和 [設計工作區](docs/creative_tools.md)。
 
 ---
 

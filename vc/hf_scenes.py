@@ -19,11 +19,11 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
+from vc.camera import scene_camera
 from vc.media import can_use_nvenc
 from vc.project import load_project
+from vc.style_config import _number, load_style, project_visual_settings, validate_style
 from vc.tools import ROOT, find_tool
-from vc.style_config import load_style, project_visual_settings, validate_style, _number
-from vc.camera import scene_camera
 
 FONT_SRC = {"segoeui.ttf": Path("C:/Windows/Fonts/segoeui.ttf"), "segoeuib.ttf": Path("C:/Windows/Fonts/segoeuib.ttf")}
 GSAP = ROOT / "node_modules" / "gsap" / "dist" / "gsap.min.js"
@@ -47,7 +47,7 @@ def render_scene_html(scene_type: str, context: dict, style_config: dict | None 
     data = context.get("data", {})
     at = context.get("at_frames", {})
     if not isinstance(data, dict) or not isinstance(at, dict):
-        raise ValueError("Set scene data and at_frames to objects.")
+        raise ValueError("Set scene data and at_frames to objects.")  # noqa: TRY004 - 維持輸入驗證介面
     for frame in at.values():
         if frame is not None:
             _number(frame, "at_frames", 0, duration * fps)
@@ -100,11 +100,9 @@ def brand_logos(work: Path) -> dict[str, Path]:
 
 def build_project(scene: dict, variant: str, tl: dict, work: Path,
                   style_config: dict | None = None, camera_config: dict | None = None) -> Path:
-    if not re.fullmatch(r"[A-Za-z0-9_-]+", scene["id"]) or variant not in ("internal", "public"):
-        raise ValueError("Use safe scene IDs and internal or public variants.")
+    if not re.fullmatch(r"[A-Za-z0-9_-]+", scene["id"]) or variant != "main":
+        raise ValueError("Use a safe scene ID and the main visual.")
     vis = scene["visuals"][variant]
-    if variant == "public" and vis.get("images"):
-        raise ValueError("Remove source images from the public variant.")
     if style_config is None or camera_config is None:
         project_style, project_camera = project_visual_settings(work.parent)
         style_config = project_style if style_config is None else style_config
@@ -122,7 +120,7 @@ def build_project(scene: dict, variant: str, tl: dict, work: Path,
         dst = assets / f"img{i}{Path(img).suffix}"
         shutil.copyfile(img, dst)
         images["list"].append(f"assets/{dst.name}")
-    if variant == "internal":
+    if variant == "main":
         for name, f in brand_logos(work).items():
             shutil.copyfile(f, assets / f.name)
             images[name] = f"assets/{f.name}"
@@ -163,7 +161,7 @@ def lint(folder: Path) -> tuple[int, str]:
 def _run_in(folder: Path, cmd: list[str], timeout: float = 900):
     env = dict(os.environ, NODE_USE_SYSTEM_CA="1")
     env["PATH"] = str(Path(find_tool("ffmpeg")).parent) + os.pathsep + env["PATH"]
-    return subprocess.run(cmd, cwd=str(folder), capture_output=True, text=True, encoding="utf-8",
+    return subprocess.run(cmd, cwd=str(folder), capture_output=True, check=False, text=True, encoding="utf-8",
                           errors="replace", timeout=timeout, env=env)
 
 
@@ -184,14 +182,15 @@ def render_all(tl: dict, work: Path, quality: str = "draft", use_gpu: bool = Tru
     gpu_ready = use_gpu and can_use_nvenc()
     new, report = {}, []
     for sc in tl["scenes"]:
-        for variant in ("internal", "public"):
+        for variant in ("main",):
             if sc["visuals"][variant]["kind"] != "anim":
                 continue
             folder = build_project(sc, variant, tl, work, style_config, camera_config)
             out = work / "hf" / variant / f"{sc['id']}.mp4"
             key = folder_key(folder) + quality
             entry = {"scene": sc["id"], "variant": variant, "file": str(out.relative_to(work)).replace("\\", "/")}
-            if old.get(entry["file"]) == key and out.is_file():
+            from vc.pipeline_safety import media_is_current
+            if old.get(entry["file"]) == key and out.is_file() and media_is_current(out, tl):
                 entry["made"] = False
             else:
                 errors, text = lint(folder)
@@ -232,6 +231,12 @@ def main(argv: list[str]) -> int:
     for r in report:
         n = count_frames(proj.work / r["file"])
         ok = abs(n - frames[r["scene"]]) <= 1
+        marker = (proj.work / r["file"]).with_suffix(".mp4.json")
+        if ok:
+            from vc.pipeline_safety import mark_media
+            mark_media(proj.work / r["file"], tl)
+        else:
+            marker.unlink(missing_ok=True)
         bad += [] if ok else [r["file"]]
         print(f"{r['file']:<28} 影格 {n:>4} / {frames[r['scene']]:<4} {'重新渲染' if r['made'] else '快取'}")
     if bad:

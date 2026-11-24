@@ -198,6 +198,9 @@ def main(argv: list[str]) -> int:
         print("用法：python -m vc voice <project> [--engine edge|kokoro] [--voice 名稱] [--rate 語速] [--preview]")
         return 2
     proj = load_project(argv[0])
+    from vc.script import main as validate
+    if validate([str(proj.root)]) != 0:
+        return 1
     script = load_script(proj.root / "script.json")
     v = script.meta.voice
     engine = _opt(argv, "--engine") or v.engine

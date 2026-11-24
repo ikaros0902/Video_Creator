@@ -18,7 +18,7 @@ Feature: The timeline follows the narration, and the recording fits the timeline
 
   Scenario: Recording clips fill the demo scene exactly
     When I build the timeline
-    Then the internal clips of scene "s05" cover the scene with no gap and no overlap
+    Then the clips of scene "s05" cover the scene with no gap and no overlap
     And clip 1 of scene "s05" starts on the frame of the word "Second"
     And no clip plays faster than 2.5 times normal speed
 

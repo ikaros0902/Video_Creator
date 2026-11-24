@@ -50,7 +50,7 @@ def _key(cue_data: dict) -> str:
     return hashlib.sha1(raw.encode("utf-8")).hexdigest()[:16]
 
 
-def render_scene(scene: dict, variant: str, fps: int, out_dir: Path, use_gpu: bool = True) -> dict:
+def render_scene(scene: dict, variant: str, fps: int, out_dir: Path, use_gpu: bool = True, force: bool = False) -> dict:
     cls = scene["visuals"][variant]["data"]["scene_class"]
     cue_data = scene_cues(scene, variant, fps)
     # 片尾 logo 用 vc/brand.py 產生的透明 PNG（只有 internal 版會用到）
@@ -60,7 +60,7 @@ def render_scene(scene: dict, variant: str, fps: int, out_dir: Path, use_gpu: bo
     cue_path, sync_path, out = out_dir / f"{sid}_cues.json", out_dir / f"{sid}_sync.json", out_dir / f"{sid}.mp4"
     key = _key(cue_data)
     old = json.loads(cue_path.read_text(encoding="utf-8")) if cue_path.is_file() else {}
-    if old.get("key") == key and out.is_file() and sync_path.is_file():
+    if not force and old.get("key") == key and out.is_file() and sync_path.is_file():
         return {"scene": sid, "made": False, "file": out, "sync": json.loads(sync_path.read_text(encoding="utf-8"))}
 
     cue_path.write_text(json.dumps({**cue_data, "key": key}, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -71,7 +71,7 @@ def render_scene(scene: dict, variant: str, fps: int, out_dir: Path, use_gpu: bo
     env["PATH"] = str(Path(find_tool("ffmpeg")).parent) + os.pathsep + env["PATH"]
     cmd = [sys.executable, "-m", "manim", "render", "-r", "1920,1080", "--fps", str(fps),
            "--disable_caching", "--media_dir", str(media), "-o", sid, str(SCENES_FILE), cls]
-    res = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace",
+    res = subprocess.run(cmd, capture_output=True, check=False, text=True, encoding="utf-8", errors="replace",
                          timeout=1800, env=env, cwd=str(ROOT))
     found = list(media.rglob(f"{sid}.mp4"))
     if res.returncode != 0 or not found:
@@ -87,20 +87,28 @@ def render_scene(scene: dict, variant: str, fps: int, out_dir: Path, use_gpu: bo
 
 def main(argv: list[str]) -> int:
     if not argv:
-        print("用法：python -m vc manim <project> [--scene s04] [--variant internal] [--no-gpu]")
+        print("用法：python -m vc manim <project> [--scene s04] [--no-gpu]")
         return 2
     proj = load_project(argv[0])
     only = argv[argv.index("--scene") + 1] if "--scene" in argv else None
-    variant = argv[argv.index("--variant") + 1] if "--variant" in argv else "internal"
+    if "--variant" in argv:
+        print("已取消版本選項，請使用單一影片。", file=sys.stderr)
+        return 2
+    variant = "main"
     use_gpu = "--no-gpu" not in argv
     tl = json.loads((proj.work / "timeline.json").read_text(encoding="utf-8"))
     fps, bad = tl["fps"], []
     for sc in tl["scenes"]:
         if sc["visuals"][variant]["kind"] != "manim" or (only and sc["id"] != only):
             continue
-        r = render_scene(sc, variant, fps, proj.work / "manim", use_gpu=use_gpu)
+        from vc.pipeline_safety import media_is_current
+        output = proj.work / "manim" / f"{sc['id']}.mp4"
+        r = render_scene(sc, variant, fps, proj.work / "manim", use_gpu=use_gpu, force=not media_is_current(output, tl))
         n, late = count_frames(r["file"]), max_lateness_frames(r["sync"], fps)
         ok = n == sc["duration_frames"] and late <= MAX_LATE_FRAMES
+        if ok:
+            from vc.pipeline_safety import mark_media
+            mark_media(r["file"], tl)
         bad += [] if ok else [sc["id"]]
         print(f"{sc['id']}: {n}/{sc['duration_frames']} 格  觸發點 {len(r['sync']['events'])} 個  "
               f"最大延遲 {late:.1f} 格  {'重新渲染' if r['made'] else '快取'}")

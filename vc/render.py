@@ -131,7 +131,7 @@ def render(props_path: Path, out: Path, work: Path, use_gpu: bool = True) -> sub
     # 啟用 ANGLE GPU 與硬體加速（無可用 GPU 時自動回退軟體算圖）
     if use_gpu and os.environ.get("VC_GPU", "auto").strip().lower() not in {"0", "false", "off", "cpu"}:
         cmd.extend(["--gl=angle", "--hardware-acceleration=if-possible"])
-    return subprocess.run(cmd, cwd=str(REMOTION_DIR), capture_output=True, text=True, encoding="utf-8",
+    return subprocess.run(cmd, cwd=str(REMOTION_DIR), capture_output=True, check=False, text=True, encoding="utf-8",
                           errors="replace", timeout=3600, env=env)
 
 
@@ -169,10 +169,10 @@ def get_loudness_targets(proj_root: Path) -> tuple[float, float]:
     cfg_path = proj_root / "project.yaml"
     if not cfg_path.is_file():
         return LOUDNESS_I, LOUDNESS_TP
+    import yaml
     try:
-        import yaml
         cfg = yaml.safe_load(cfg_path.read_text(encoding="utf-8")) or {}
-    except Exception:
+    except (OSError, ValueError, yaml.YAMLError):
         return LOUDNESS_I, LOUDNESS_TP
 
     if not isinstance(cfg, dict):
@@ -226,156 +226,114 @@ def normalize_loudness(src: Path, dst: Path, target_i: float = LOUDNESS_I, targe
 
 
 def main(argv: list[str]) -> int:
+    import re
+    import shutil
+    import tempfile
+
+    from vc.pipeline_safety import (
+        alignment_is_current,
+        atomic_write,
+        check_ingest,
+        check_voice,
+        file_hash,
+        media_is_current,
+        missing_media,
+        script_fingerprint,
+        visual_fingerprint,
+    )
+    from vc.script import load_script
+    from vc.script import main as validate
+    from vc.voice import make_backend, voice_dir
+
     if not argv:
-        print("用法：python -m vc render <project> [--variant internal|public|all] [--name draft] [--no-gpu]")
+        print("用法：python -m vc render <project> [--name draft] [--no-gpu]")
+        return 2
+    if "--variant" in argv:
+        print("已取消版本選項。請先執行 vc migrate，再使用單一影片輸出。", file=sys.stderr)
         return 2
     proj = load_project(argv[0])
-    target_lufs, target_tp = get_loudness_targets(proj.root)
-    variant = argv[argv.index("--variant") + 1] if "--variant" in argv else "all"
+    if validate([str(proj.root)]) != 0:
+        return 1
     name = argv[argv.index("--name") + 1] if "--name" in argv else "draft"
-    use_gpu = "--no-gpu" not in argv
-    tl = json.loads((proj.work / "timeline.json").read_text(encoding="utf-8"))
-    recs = json.loads((proj.work / "recordings.json").read_text(encoding="utf-8"))["recordings"]
-    rec_sizes = {r["id"]: (r["probe"]["width"], r["probe"]["height"]) for r in recs}
-    variants = ("internal", "public") if variant == "all" else (variant,)
+    if not re.fullmatch(r"[A-Za-z0-9_-]+", name):
+        print("影片名稱只能包含英數字、底線及連字號。", file=sys.stderr)
+        return 2
+    try:
+        script = load_script(proj.root / "script.json")
+        v = script.meta.voice
+        vdir = voice_dir(proj.work, make_backend(v.engine, v.name, v.rate))
+        manifest = json.loads((vdir / "manifest.json").read_text(encoding="utf-8"))
+        aligned = json.loads((proj.work / "align" / "words.json").read_text(encoding="utf-8"))
+        tl = json.loads((proj.work / "timeline.json").read_text(encoding="utf-8"))
+        check_voice(script, manifest, vdir)
+        if (not alignment_is_current(aligned, manifest, vdir)
+                or aligned.get("script_fingerprint") != script_fingerprint(script)
+                or tl.get("script_fingerprint") != script_fingerprint(script)
+                or tl.get("visual_fingerprint") != visual_fingerprint(proj.root, script, proj.work)
+                or tl.get("voice_fingerprint") != aligned.get("voice_fingerprint")):
+            raise ValueError("管線資料已過期，請依序執行 vc voice、vc align 和 vc plan。")
+        rec_file = proj.work / "recordings.json"
+        recs = json.loads(rec_file.read_text(encoding="utf-8"))["recordings"] if rec_file.is_file() else []
+        check_ingest(proj, recs, script)
+        current_recordings = {r["id"]: file_hash(Path(r["file"])) for r in recs}
+        if tl.get("recording_fingerprints") != current_recordings:
+            raise ValueError("錄影來源已變更，請重新執行 vc ingest-rec 和 vc plan。")
+        rec_sizes = {r["id"]: (r["probe"]["width"], r["probe"]["height"]) for r in recs}
+        if not rec_sizes:
+            rec_sizes = tuple(tl["size"])
+        props = build_props(tl, "main", proj.work, rec_sizes)
+        missing = missing_media(props, proj.work)
+        if missing:
+            raise ValueError("缺少影片素材，請先渲染場景：" + ", ".join(sorted(set(missing))))
+        for scene in props["scenes"]:
+            sources = ([scene["anim_src"]] if scene.get("anim_src") else []) + [c["src"] for c in scene.get("clips", [])]
+            if any(not media_is_current(proj.work / src, tl) for src in sources):
+                raise ValueError(f"{scene['id']} 的畫面已過期，請重新執行 vc hf、vc manim 或 vc fit。")
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        print(f"無法渲染：{exc}", file=sys.stderr)
+        return 1
 
-    import shutil
-    # 配樂優先序：專案 input/bgm.mp3 -> 專案 input/audio/ -> 專案根目錄 bgm.mp3 -> 全域 assets/templates -> Videos/Templates
-    bgm_candidates = [
-        proj.input / "bgm.mp3",
-        proj.input / "audio" / "bgm.mp3",
-        proj.input / "audio" / "bgm_midsurface.mp3",
-        proj.root / "bgm.mp3",
-        ROOT / "assets" / "templates" / "audio" / "bgm_midsurface.mp3",
-        ROOT / "assets" / "templates" / "bgm.mp3",
-        ROOT / "Videos" / "Templates" / "bgm.mp3",
-        ROOT / "Videos" / "Templates" / "bgm_midsurface.mp3",
-    ]
+    bgm_candidates = [proj.input / "bgm.mp3", proj.input / "audio" / "bgm.mp3", proj.root / "bgm.mp3"]
     bgm_src = next((p for p in bgm_candidates if p.is_file()), None)
     bgm_dst = proj.work / "bgm.mp3"
-    if bgm_src is not None:
-        if not bgm_dst.is_file() or bgm_src.stat().st_mtime > bgm_dst.stat().st_mtime:
-            shutil.copyfile(bgm_src, bgm_dst)
-    else:
-        bgm_dst.unlink(missing_ok=True)
-
+    if bgm_src:
+        shutil.copyfile(bgm_src, bgm_dst)
+    elif bgm_dst.exists():
+        bgm_dst.unlink()
     levels = measure_bgm_levels(proj.work, [Path(a["file"]) for a in tl["audio"]])
-    if levels:
-        sp, gp = bgm_gains(*levels)
-        print(f"配樂 {levels[0]:.1f} LUFS、旁白平均 {levels[1]:.1f} LUFS → 配樂音量 旁白時 {sp}、停頓時 {gp}")
-
-    failed = []
-    rendered_outputs = {}
-    for v in variants:
-        props = build_props(tl, v, proj.work, rec_sizes, levels)
-        missing = [s["id"] for s in props["scenes"] if s["kind"] in ("anim", "manim") and not s["anim_src"]]
-        props_path = proj.work / "remotion" / f"props_{v}.json"
-        props_path.parent.mkdir(parents=True, exist_ok=True)
-        props_path.write_text(json.dumps(props, ensure_ascii=False), encoding="utf-8")
-        out = proj.output / v / f"{name}.mp4"
-        raw = proj.work / "remotion" / f"raw_{v}.mp4"
-        raw.unlink(missing_ok=True)
-        out.unlink(missing_ok=True)
-        # 首次渲染啟用 GPU（若遇 ERR_NETWORK_CHANGED 或驅動不相容則自動回退 CPU 重試）
-        for attempt in range(2):
-            res = render(props_path, raw, proj.work, use_gpu=use_gpu and attempt == 0)
-            if res.returncode == 0 and raw.is_file():
-                break
-        if res.returncode != 0 or not raw.is_file():
-            print(f"{v}: Remotion 渲染失敗\n{(res.stdout + res.stderr)[-2000:]}", file=sys.stderr)
-            failed.append(v)
-            continue
-        loud = normalize_loudness(raw, out, target_i=target_lufs, target_tp=target_tp)
-        info, n = probe(out), count_frames(out)
-        ok = (n == tl["total_frames"] and info["has_audio"] and loud["I"] is not None
-              and abs(loud["I"] - target_lufs) <= 1.0 and (loud["TP"] is None or loud["TP"] <= target_tp + 0.1))
-        failed += [] if ok else [v]
-        rendered_outputs[v] = {
-            "out": out,
-            "info": info,
-            "frames": n,
-            "loudness": loud,
-            "missing_anim": missing,
-        }
-        print(f"{v}: {out}  {info['duration']:.2f}s  {n}/{tl['total_frames']} 格  "
-              f"{info['width']}x{info['height']}  {loud['I']} LUFS  峰值 {loud['TP']} dBTP  佔位畫面={missing or '無'}")
-
-    # --- 依 PROJECT.md § Interface Contracts 建立標準化發布產物與診斷報告 ---
-    if not failed and rendered_outputs:
-        from datetime import datetime
-        import shutil
-
-        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-        reports_dir = proj.output / "reports"
-        reports_dir.mkdir(parents=True, exist_ok=True)
-
-        metadata_variants = {}
-        loudness_measurements = {}
-
-        for v, meta in rendered_outputs.items():
-            src_file = meta["out"]
-            v_info = meta["info"]
-            v_loud = meta["loudness"]
-
-            if v == "internal":
-                master_vid = proj.output / "internal" / f"{ts}_internal_master.mp4"
-                shutil.copyfile(src_file, master_vid)
-                srt_src = proj.output / "internal" / "final.srt"
-                if srt_src.is_file():
-                    master_srt = proj.output / "internal" / f"{ts}_internal_master.srt"
-                    shutil.copyfile(srt_src, master_srt)
-
-            elif v == "public":
-                pub_vid_1 = proj.output / "public" / f"{ts}_public_public.mp4"
-                pub_vid_2 = proj.output / "public" / f"{ts}_public.mp4"
-                shutil.copyfile(src_file, pub_vid_1)
-                shutil.copyfile(src_file, pub_vid_2)
-
-            bitrate_kbps = round(src_file.stat().st_size * 8 / (v_info["duration"] * 1000), 1) if v_info.get("duration") else None
-            metadata_variants[v] = {
-                "file": str(src_file.relative_to(proj.root)).replace("\\", "/"),
-                "total_frames": meta["frames"],
-                "duration_s": round(v_info["duration"], 3),
-                "width": v_info["width"],
-                "height": v_info["height"],
-                "bitrate_kbps": bitrate_kbps,
-                "file_size_bytes": src_file.stat().st_size,
-            }
-            compliant = (
-                abs(v_loud["I"] - target_lufs) <= 1.0
-                and (v_loud["TP"] is None or v_loud["TP"] <= target_tp + 0.1)
-            ) if v_loud["I"] is not None else False
-            loudness_measurements[v] = {
-                "integrated_lufs": v_loud["I"],
-                "true_peak_dbtp": v_loud["TP"],
-                "target_lufs": target_lufs,
-                "compliant": compliant,
-            }
-
-        # 寫入 reports/metadata.json
-        metadata = {
-            "project": proj.name,
-            "timestamp": ts,
-            "fps": tl["fps"],
-            "total_frames": tl["total_frames"],
-            "target_duration_s": tl.get("total_s"),
-            "resolution": tl["size"],
-            "variants": metadata_variants,
-        }
-        (reports_dir / "metadata.json").write_text(json.dumps(metadata, indent=2, ensure_ascii=False), encoding="utf-8")
-
-        # 寫入 reports/loudness_report.json (EBU R128 合規報告)
-        loudness_report = {
-            "standard": "EBU R128",
-            "target_lufs": target_lufs,
-            "true_peak_max_dbtp": target_tp,
-            "measurements": loudness_measurements,
-            "overall_compliance": all(m["compliant"] for m in loudness_measurements.values()),
-        }
-        (reports_dir / "loudness_report.json").write_text(json.dumps(loudness_report, indent=2, ensure_ascii=False), encoding="utf-8")
-        print(f"[OK] 標準化報告產出完成：{reports_dir / 'metadata.json'} 與 {reports_dir / 'loudness_report.json'}")
-
-    return 1 if failed else 0
+    props = build_props(tl, "main", proj.work, rec_sizes, levels)
+    props_path = proj.work / "remotion" / "props.json"
+    atomic_write(props_path, json.dumps(props, ensure_ascii=False).encode("utf-8"))
+    proj.output.mkdir(parents=True, exist_ok=True)
+    out = proj.output / f"{name}.mp4"
+    target_lufs, target_tp = get_loudness_targets(proj.root)
+    try:
+        with tempfile.TemporaryDirectory(prefix=".render-", dir=proj.output) as temp:
+            raw = Path(temp) / "raw.mp4"
+            candidate = Path(temp) / "result.mp4"
+            res = render(props_path, raw, proj.work, use_gpu="--no-gpu" not in argv)
+            if res.returncode != 0 or not raw.is_file():
+                raise RuntimeError("Remotion 渲染失敗：" + (res.stdout + res.stderr)[-2000:])
+            loud = normalize_loudness(raw, candidate, target_i=target_lufs, target_tp=target_tp)
+            info, frames = probe(candidate), count_frames(candidate)
+            if not (frames == tl["total_frames"] and info["has_audio"] and loud["I"] is not None
+                    and abs(loud["I"] - target_lufs) <= 1.0
+                    and loud["TP"] is not None and loud["TP"] <= target_tp + 0.1):
+                raise RuntimeError("輸出未通過影格數、音訊或響度檢查。")
+            os.replace(candidate, out)
+    except (OSError, RuntimeError, ValueError, KeyError, subprocess.SubprocessError) as exc:
+        print(f"渲染失敗：{exc}", file=sys.stderr)
+        return 1
+    reports = proj.output / "reports"
+    metadata = {"project": proj.name, "file": out.name, "fps": tl["fps"], "total_frames": frames,
+                "duration_s": info["duration"], "width": info["width"], "height": info["height"],
+                "file_size_bytes": out.stat().st_size}
+    loudness = {"target_lufs": target_lufs, "true_peak_max_dbtp": target_tp,
+                "integrated_lufs": loud["I"], "true_peak_dbtp": loud["TP"], "compliant": True}
+    atomic_write(reports / "metadata.json", json.dumps(metadata, ensure_ascii=False, indent=2).encode("utf-8"))
+    atomic_write(reports / "loudness_report.json", json.dumps(loudness, ensure_ascii=False, indent=2).encode("utf-8"))
+    print(f"影片完成：{out}，{frames} 格，{loud['I']} LUFS")
+    return 0
 
 
 if __name__ == "__main__":

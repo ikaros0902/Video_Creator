@@ -7,20 +7,20 @@ Milestone 4 驗收測試套件：
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 import pytest
 import yaml
 
-from vc.camera import scene_camera
 from vc.hf_scenes import render_scene_html
 from vc.media import probe
 from vc.project import load_project
-from vc.script import check, load_facts, load_script
+from vc.script import load_facts, load_script
 from vc.style_config import load_style
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-DEMO_DIR = REPO_ROOT / "projects" / "demo_showcase"
+DEMO_DIR = Path(os.environ.get("VC_SHOWCASE_PROJECT", str(REPO_ROOT / "projects" / "demo_showcase"))).resolve()
 
 
 class TestMilestone4Showcase:
@@ -28,6 +28,7 @@ class TestMilestone4Showcase:
 
     # --- Feature 16: 自包含範例輸入資料建置 ---
 
+    @pytest.mark.integration
     def test_f16_input_directory_structure_and_files(self):
         """驗證 demo_showcase 輸入目錄結構完整性且檔案皆為非 0-byte 真實素材。"""
         assert DEMO_DIR.is_dir(), f"專案目錄不存在：{DEMO_DIR}"
@@ -52,6 +53,7 @@ class TestMilestone4Showcase:
         assert logo_file.stat().st_size > 500, "標誌檔案大小異常"
         assert logo_file.read_bytes()[:8] == b"\x89PNG\r\n\x1a\n", "標誌缺少 PNG 標頭"
 
+    @pytest.mark.integration
     def test_f16_project_configs_contracts(self):
         """驗證 project.yaml, facts.yaml, script.json 符合介面合約。"""
         proj = load_project(str(DEMO_DIR))
@@ -69,6 +71,7 @@ class TestMilestone4Showcase:
         assert script.meta.size == (1920, 1080)
         assert len(script.scenes) == 3
 
+    @pytest.mark.integration
     def test_f16_vc_validate_clean_pass(self, run_vc_cli):
         """驗證 python -m vc validate demo_showcase 100% 通過無錯誤。"""
         res = run_vc_cli("validate", str(DEMO_DIR))
@@ -77,6 +80,7 @@ class TestMilestone4Showcase:
 
     # --- Feature 17: 多風格與運鏡參數切換實測 ---
 
+    @pytest.mark.integration
     def test_f17_style_variants_files_exist(self):
         """驗證包含至少 2 套風格與運鏡配置檔案。"""
         v_navy = DEMO_DIR / "variants" / "executive_navy_cinematic.yaml"
@@ -119,6 +123,7 @@ class TestMilestone4Showcase:
         assert "#3FA9F5" in html_navy
         assert "#A71D2A" in html_swiss
 
+    @pytest.mark.integration
     def test_f17_comparison_report_audit(self):
         """驗證風格切換比對報告實體存在且記錄實質差異。"""
         rep_json = DEMO_DIR / "reports" / "style_comparison_report.json"
@@ -135,75 +140,52 @@ class TestMilestone4Showcase:
 
     # --- Feature 18: 端到端管線走通與產物稽核 ---
 
+    @pytest.mark.integration
     def test_f18_output_directory_structure_and_naming(self):
-        """驗證 output/ 下 internal/, public/, reports/ 階層與命名規範。"""
-        out_dir = DEMO_DIR / "output"
-        assert out_dir.is_dir()
-        assert (out_dir / "internal").is_dir()
-        assert (out_dir / "public").is_dir()
-        assert (out_dir / "reports").is_dir()
+        """單一影片與字幕直接保存於 output，報告保存於 reports。"""
+        output = DEMO_DIR / "output"
+        assert list(output.glob("*.mp4")), "缺少單一影片成品"
+        assert (output / "final.srt").stat().st_size > 0
+        assert (output / "reports").is_dir()
 
-        # 檢查 internal 產物
-        int_masters = list((out_dir / "internal").glob("*_master.mp4"))
-        assert len(int_masters) >= 1, "缺少 internal master MP4"
-        assert int_masters[0].stat().st_size > 1000000, "master MP4 大小異常"
-
-        int_srts = list((out_dir / "internal").glob("*_master.srt"))
-        assert len(int_srts) >= 1, "缺少 internal master SRT"
-        assert int_srts[0].stat().st_size > 0
-
-        # 檢查 public 產物
-        pub_vids = list((out_dir / "public").glob("*_public.mp4"))
-        assert len(pub_vids) >= 1, "缺少 public MP4"
-        assert pub_vids[0].stat().st_size > 1000000, "public MP4 大小異常"
-
+    @pytest.mark.integration
     def test_f18_binary_magic_bytes_authenticity(self):
-        """驗證產出之所有影片檔案具備真實 MP4 ftyp 二進位標頭（杜絕偽造文字檔與 0-byte 佔位）。"""
-        out_dir = DEMO_DIR / "output"
-        all_mp4s = list(out_dir.glob("**/*.mp4"))
-        assert len(all_mp4s) >= 3, "生成的 MP4 影片數量不足"
+        """成品必須包含可讀取的影像與音訊串流。"""
+        videos = list((DEMO_DIR / "output").glob("*.mp4"))
+        assert videos, "缺少 MP4 成品"
+        for video in videos:
+            assert video.read_bytes()[4:8] == b"ftyp"
+            info = probe(video)
+            assert info["video_codec"] is not None
+            assert info["has_audio"] is True
+            assert (info["width"], info["height"]) == (1920, 1080)
 
-        for mp4 in all_mp4s:
-            header = mp4.read_bytes()[:16]
-            assert header[4:8] == b"ftyp", f"檔案 {mp4.name} 缺少 MP4 ftyp magic bytes！"
-            pb = probe(mp4)
-            assert pb["video_codec"] is not None, f"{mp4.name} 缺少影像串流"
-            assert pb["has_audio"] is True, f"{mp4.name} 缺少音訊串流"
-            assert pb["width"] == 1920 and pb["height"] == 1080
-
+    @pytest.mark.integration
     def test_f18_metadata_report_schema_and_values(self):
-        """驗證 reports/metadata.json 符合渲染參數規範。"""
-        meta_file = DEMO_DIR / "output" / "reports" / "metadata.json"
-        assert meta_file.is_file(), "缺少 metadata.json"
+        """報告的單一影片資訊必須符合實際成品。"""
+        from vc.fit import count_frames
+        output = DEMO_DIR / "output"
+        metadata = json.loads((output / "reports" / "metadata.json").read_text(encoding="utf-8"))
+        video = output / metadata["file"]
+        info = probe(video)
+        assert metadata["total_frames"] == count_frames(video)
+        assert metadata["fps"] == info["fps"]
+        assert metadata["width"] == info["width"]
+        assert metadata["height"] == info["height"]
+        assert metadata["file_size_bytes"] == video.stat().st_size
 
-        meta = json.loads(meta_file.read_text(encoding="utf-8"))
-        assert meta["project"] == "demo_showcase"
-        assert meta["fps"] == 30
-        assert meta["total_frames"] == 574
-        assert meta["resolution"] == [1920, 1080]
-        assert "internal" in meta["variants"]
-        assert "public" in meta["variants"]
-
-        for v, d in meta["variants"].items():
-            assert d["total_frames"] == 574
-            assert d["width"] == 1920
-            assert d["height"] == 1080
-            assert d["bitrate_kbps"] > 500
-
+    @pytest.mark.integration
     def test_f18_loudness_report_ebu_r128_compliance(self):
-        """驗證 reports/loudness_report.json 符合 EBU R128 音訊響度合規標準（-16.0 LUFS ± 1.0）。"""
-        loud_file = DEMO_DIR / "output" / "reports" / "loudness_report.json"
-        assert loud_file.is_file(), "缺少 loudness_report.json"
-
-        loud = json.loads(loud_file.read_text(encoding="utf-8"))
-        assert loud["standard"] == "EBU R128"
-        assert loud["target_lufs"] == -16.0
-        assert loud["overall_compliance"] is True
-
-        for v in ("internal", "public"):
-            m = loud["measurements"][v]
-            assert m["compliant"] is True
-            # 整合響度嚴格符合 EBU R128 (-16.0 LUFS ± 1.0)，非自指涉校驗
-            assert abs(m["integrated_lufs"] - (-16.0)) <= 1.0
-            assert m["target_lufs"] == -16.0
-            assert m["true_peak_dbtp"] <= -1.0
+        """報告中的響度需符合設定目標與實際成品量測。"""
+        from vc.render import get_loudness_targets, measure_loudness
+        output = DEMO_DIR / "output"
+        metadata = json.loads((output / "reports" / "metadata.json").read_text(encoding="utf-8"))
+        report = json.loads((output / "reports" / "loudness_report.json").read_text(encoding="utf-8"))
+        target, peak = get_loudness_targets(DEMO_DIR)
+        measured = measure_loudness(output / metadata["file"])
+        assert report["compliant"] is True
+        assert report["target_lufs"] == target
+        assert abs(measured["I"] - target) <= 1.0
+        assert measured["TP"] <= peak + 0.1
+        assert report["integrated_lufs"] == measured["I"]
+        assert report["true_peak_dbtp"] == measured["TP"]

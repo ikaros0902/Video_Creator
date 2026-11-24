@@ -1,8 +1,10 @@
 {% extends 'base.html.j2' %}{% from 'macros.html.j2' import clip, logos %}
 {% block body %}
 {% call clip('bar',1,D,'left:' ~ (margin + 40) ~ 'px;top:380px;width:360px;height:8px;background:' ~ c.accent ~ ';transform-origin:left;') %}{% endcall %}
-{% call clip('title',2,D,'left:' ~ (margin + 40) ~ 'px;top:410px;font-size:110px;','t hide') %}{{ d.title }}{% endcall %}
-{% call clip('sub',3,D,'left:' ~ (margin + 44) ~ 'px;top:560px;font-size:46px;color:' ~ c.accent ~ ';','hide') %}{{ d.subtitle }}{% endcall %}
+{% set title_size = t.typography.base_size_px * t.typography.scale_ratio * 2.75 %}
+{% set subtitle_top = 410 + title_size * t.typography.get('line_height', 1.1) + t.typography.get('content_gap_px', 28) %}
+{% call clip('title',2,D,'left:' ~ (margin + 40) ~ 'px;top:410px;font-size:' ~ title_size ~ 'px;','t hide') %}{{ d.title }}{% endcall %}
+{% call clip('sub',3,D,'left:' ~ (margin + 44) ~ 'px;top:' ~ subtitle_top ~ 'px;font-size:' ~ (t.typography.base_size_px * 1.53) ~ 'px;color:' ~ c.accent ~ ';','hide') %}{{ d.subtitle }}{% endcall %}
 {% if d.get('logo') and images.get('primary') %}{% call clip('logos',4,D,'right:' ~ margin ~ 'px;top:90px;height:56px;display:flex;align-items:center;gap:56px;','hide') %}{{ logos(images,56) }}{% endcall %}{% endif %}
 {% endblock %}
 {% block script %}

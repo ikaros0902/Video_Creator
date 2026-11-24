@@ -6,14 +6,15 @@
 @font-face { font-family: "VC Sans"; src: url("assets/segoeuib.ttf"); font-weight: 700; }
 #stage { position: relative; width: 1920px; height: 1080px; overflow: hidden;
          background-color: {{ c.background }};
-         font-family: {{ t.typography.body_font }}; font-size: {{ t.typography.base_size_px }}px; color: {{ c.text_primary }}; }
+         font-family: {{ t.typography.body_font }}; font-size: {{ t.typography.base_size_px }}px; color: {{ c.text_primary }};
+         line-height: {{ t.typography.get('line_height', 1.4) }}; letter-spacing: {{ t.typography.get('letter_spacing_px', 0) }}px; }
 #camera { position: absolute; width: 1920px; height: 1080px; transform-origin: center; }
 :root { --safe-margin: {{ t.spacing.safe_margin_px }}px; }
 .clip { position: absolute; right: var(--safe-margin); }
 .clip svg { max-width: 100%; }
 #inset svg, #chassis svg { width: 100%; height: 100%; }
 .hide { opacity: 0; }
-.h1 { font-family: {{ t.typography.heading_font }}; font-weight: 700; font-size: {{ (t.typography.base_size_px * t.typography.scale_ratio * 1.5)|round(2) }}px; color: {{ c.text_primary }}; letter-spacing: -0.5px; }
+.h1 { font-family: {{ t.typography.heading_font }}; font-weight: 700; font-size: {{ (t.typography.base_size_px * t.typography.scale_ratio * 1.5)|round(2) }}px; color: {{ c.text_primary }}; letter-spacing: {{ t.typography.get('letter_spacing_px', -0.5) }}px; }
 .kicker { font-weight: 700; font-size: 26px; letter-spacing: 4px; color: {{ c.accent }}; text-transform: uppercase; }
 .card { background: {{ c.surface }}; border: {{ t.surface.border_width }}px solid {{ c.border }};
         box-shadow: {% if t.surface.shadow == 'soft' %}0 16px 36px -10px rgba(0,0,0,0.4){% else %}none{% endif %};

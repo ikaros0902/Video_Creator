@@ -15,7 +15,7 @@ Feature: The executive cut keeps numbers inside their own scope
   Scenario: A screen number from outside this scene's facts is rejected
     When the timer card of scene "e03" says "Whole model by hand: 6–12 h"
     And I validate the script
-    Then an error for "e03/internal" mentions "6"
+    Then an error for "e03/main" mentions "6"
 
   Scenario: A narration number from outside this scene's facts is rejected
     When scene "e03" narration is "Here is one of our 35 parts. For this part, that took about four minutes."

@@ -35,15 +35,15 @@ Feature: The script is complete, correct, and plain
     And I validate the script
     Then an error for "glossary" mentions "midsurface"
 
-  Scenario: The public version cannot use real footage
-    When the public visual of scene "s05" uses the internal recording
+  Scenario: The single visual permits real footage
+    When the visual of scene "s05" retains its recording
     And I validate the script
-    Then an error for "s05" mentions "public 版不能使用 recording"
+    Then there are no errors
 
-  Scenario: The public version cannot use PPT pictures
-    When the public visual of scene "s05" adds the picture "slides/images/slide06_pic2.png"
+  Scenario: The single visual permits PPT pictures
+    When the visual of scene "s05" adds the picture "slides/images/slide06_pic2.png"
     And I validate the script
-    Then an error for "s05" mentions "public 版不能使用 PPT 圖片"
+    Then there are no errors
 
   Scenario: A clip past the end of the recording is rejected
     Given the recording "rec01" is 110.4 seconds long
@@ -51,12 +51,12 @@ Feature: The script is complete, correct, and plain
     And the recording "rec03" is 45.47 seconds long
     When clip 0 of scene "s05" ends at 60.0 seconds
     And I validate the script
-    Then an error for "s05/internal" mentions "超過錄影長度"
+    Then an error for "s05/main" mentions "超過錄影長度"
 
   Scenario: A callout word must be spoken
     When callout 0 of scene "s05" is linked to the word "Configure"
     And I validate the script
-    Then an error for "s05/internal" mentions "Configure"
+    Then an error for "s05/main" mentions "Configure"
 
   Scenario: Sections must follow the agreed order
     When scenes "s03" and "s04" change places

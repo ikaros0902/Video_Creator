@@ -8,8 +8,7 @@ from pytest_bdd import given, parsers, scenarios, then, when
 
 from vc import hf_scenes, plan, render
 from vc.project import resolve_project_dir
-from vc.script import load_script
-from vc.tools import ROOT
+from vc.script import Visual, load_script
 
 scenarios("compose.feature")
 
@@ -22,6 +21,17 @@ def ctx(tmp_path) -> dict:
 @given("the sample script")
 def script(ctx):
     ctx["script"] = load_script(resolve_project_dir("_sample") / "script.json")
+    # 單一版本可自由混用錄影和動畫，此情境以固定動畫資料測試卡片觸發。
+    scene = next(s for s in ctx["script"].scenes if s.id == "s03")
+    scene.visual = Visual(kind="anim", template="cards3", images=["slides/test.png"], data={
+        "heading": "Geometry results",
+        "inset": {"drawing": "offset_half", "caption": "Continuous shell", "at_word": "Validator"},
+        "cards": [
+            {"title": "Split", "label": "Separate faces", "at_word": "eight"},
+            {"title": "Bends", "label": "Connected walls", "at_word": "bends"},
+            {"title": "Shell", "label": "Single body", "at_word": "connected"},
+        ],
+    })
 
 
 @given(parsers.parse("narration audio where every word lasts {per:g} seconds"))
@@ -82,7 +92,7 @@ def comp_id(ctx, cid):
 @then("the composition duration equals the scene length in seconds")
 def comp_duration(ctx):
     sc = _scene(ctx, ctx["sid"])
-    m = re.search(r'id="stage"[^>]*data-duration="([\d.]+)"', ctx["html"], re.S)
+    m = re.search(r'id="stage"[^>]*data-duration="([\d.]+)"', ctx["html"], re.DOTALL)
     assert m and abs(float(m.group(1)) - sc["duration_frames"] / ctx["tl"]["fps"]) < 1e-3
 
 
@@ -99,19 +109,18 @@ def card_time(ctx, n, word):
     assert f'show("#card{n - 1}", {t},' in ctx["html"]
 
 
-@then("no public project contains an image file")
-def no_images(ctx):
-    for f in ctx["folders"]:
-        assert not list((f / "assets").glob("img*")), f
+@then("the animated project retains its source image")
+def has_images(ctx):
+    assert ctx["folders"]
+    assert any(list((folder / "assets").glob("img*")) for folder in ctx["folders"])
 
 
-@then("no public project contains the logo")
-def no_logo(ctx):
-    for f in ctx["folders"]:
-        assert not (f / "assets" / "primary_white.png").exists()
-        assert not (f / "assets" / "secondary_white.png").exists()
-        assert not (f / "assets" / "logo.png").exists()
-        assert "primary_white" not in (f / "index.html").read_text(encoding="utf-8").lower()
+@then("each animated project contains brand logos")
+def all_logos(ctx):
+    assert ctx["folders"]
+    for folder in ctx["folders"]:
+        assert (folder / "assets" / "primary_white.png").is_file()
+        assert (folder / "assets" / "secondary_white.png").is_file()
 
 
 @then("the project contains brand logos")
@@ -180,6 +189,7 @@ def placeholder(ctx):
     assert anim and all(s["anim_src"] is None for s in anim)
 
 
-@then("no scene is a recording")
-def no_rec(ctx):
-    assert all(s["kind"] != "recording" for s in ctx["props"]["scenes"])
+@then("the single composition retains recording scenes")
+def keeps_recording(ctx):
+    assert ctx["props"]["variant"] == "main"
+    assert any(s["kind"] == "recording" and s["clips"] for s in ctx["props"]["scenes"])

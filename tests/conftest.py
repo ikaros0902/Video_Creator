@@ -5,13 +5,12 @@
 """
 from __future__ import annotations
 
-import json
 import os
 import shutil
 import subprocess
 import sys
+from collections.abc import Callable, Generator
 from pathlib import Path
-from typing import Any, Callable, Generator
 
 import pytest
 import yaml
@@ -73,12 +72,12 @@ def sample_project_path(repo_root: Path) -> Path:
 
 
 @pytest.fixture(scope="session")
-def pipeline_project_path(repo_root: Path, sample_project_path: Path) -> Path:
-    """動態定位具備完整真實前處理產物的管線專案（優先 projects/midsurface）。"""
-    midsurface = repo_root / "projects" / "midsurface"
-    if midsurface.is_dir() and (midsurface / "work" / "timeline.json").is_file():
-        return midsurface
-    return sample_project_path
+def pipeline_project_path(repo_root: Path) -> Path:
+    """整合測試必須明確提供已完成前處理的專案，不回退至純文字範例。"""
+    path = Path(os.environ.get("VC_PIPELINE_PROJECT", str(repo_root / "projects" / "midsurface"))).resolve()
+    if not (path / "work" / "timeline.json").is_file():
+        pytest.fail("Set VC_PIPELINE_PROJECT to a prepared single-video project before running integration tests.")
+    return path
 
 
 @pytest.fixture
@@ -112,6 +111,7 @@ def validate_skill(python_bin: str, quick_validate_script: Path) -> Callable[[Pa
             pytest.skip(f"skill-creator 驗證腳本不存在：{quick_validate_script}")
         return subprocess.run(
             [python_bin, str(quick_validate_script), str(skill_dir)],
+            check=False,
             capture_output=True,
             text=True,
             encoding="utf-8",

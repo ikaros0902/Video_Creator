@@ -23,7 +23,7 @@ export type Cue = { text: string; start_frame: number; end_frame: number; words?
 // 音量倍率由 vc/render.py 依實測響度算出（配樂比旁白低 20 dB / 停頓時低 14 dB）
 export type BgmConfig = { src: string; speech_volume: number; gap_volume: number };
 export type MainProps = {
-  variant: "internal" | "public";
+  variant: "main";
   fps: number; size: [number, number]; total_frames: number; rec_size: [number, number];
   audio: { src: string; start_frame: number; duration_frames: number }[];
   cues: Cue[]; scenes: Scene[]; bgm?: BgmConfig;

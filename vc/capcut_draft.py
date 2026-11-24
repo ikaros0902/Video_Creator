@@ -32,8 +32,8 @@ def ffprobe_cmd() -> str | None:
 
 def build_draft(proj: Project, variant: str, name: str, draft_name: str) -> dict:
     """呼叫 `capcut quickstart` 建立草稿，回傳 capcut-cli 的 JSON 結果。"""
-    video = proj.output / variant / f"{name}.mp4"
-    srt = proj.output / variant / "final.srt"
+    video = proj.output / f"{name}.mp4"
+    srt = proj.output / "final.srt"
     if not video.is_file():
         raise FileNotFoundError(f"找不到影片：{video}")
     if not srt.is_file():
@@ -43,7 +43,7 @@ def build_draft(proj: Project, variant: str, name: str, draft_name: str) -> dict
     if probe:
         cmd += ["--ffprobe-cmd", probe]
     env = dict(os.environ, NODE_USE_SYSTEM_CA="1")
-    res = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace",
+    res = subprocess.run(cmd, capture_output=True, check=False, text=True, encoding="utf-8", errors="replace",
                           timeout=120, env=env)
     if res.returncode != 0:
         raise RuntimeError(f"capcut quickstart 失敗：{(res.stdout + res.stderr).strip()[-2000:]}")
@@ -52,12 +52,15 @@ def build_draft(proj: Project, variant: str, name: str, draft_name: str) -> dict
 
 def main(argv: list[str]) -> int:
     if not argv:
-        print("用法：python -m vc capcut-draft <project> [--variant internal] [--name draft] [--draft-name <name>]")
+        print("用法：python -m vc capcut-draft <project> [--name draft] [--draft-name <name>]")
         return 2
     proj = load_project(argv[0])
-    variant = argv[argv.index("--variant") + 1] if "--variant" in argv else "internal"
+    if "--variant" in argv:
+        print("已取消版本選項，請使用單一影片。")
+        return 2
+    variant = "main"
     name = argv[argv.index("--name") + 1] if "--name" in argv else "draft"
-    draft_name = argv[argv.index("--draft-name") + 1] if "--draft-name" in argv else f"{proj.name}-{variant}"
+    draft_name = argv[argv.index("--draft-name") + 1] if "--draft-name" in argv else proj.name
     result = build_draft(proj, variant, name, draft_name)
     lint = result.get("lint", {})
     added = result.get("added", {})

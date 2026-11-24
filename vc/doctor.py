@@ -6,9 +6,9 @@ import json
 import os
 import re
 import sys
+from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Callable
 
 from vc.tools import ROOT, find_tool, run, use_system_certs
 
@@ -67,18 +67,18 @@ def check_cuda() -> Check:
     try:
         import torch  # 延遲匯入：torch 載入約需數秒
     except ImportError:
-        return Check("cuda", False, "torch 未安裝", SETUP_HINT)
+        return Check("cuda", False, "torch 未安裝", SETUP_HINT, required=False)
     if not torch.cuda.is_available():
-        return Check("cuda", False, f"torch {torch.__version__} 無法使用 GPU", "安裝 CUDA 版 torch（見 scripts\\setup.ps1）")
-    return Check("cuda", True, f"torch {torch.__version__} / {torch.cuda.get_device_name(0)}")
+        return Check("cuda", False, f"torch {torch.__version__} 無法使用 GPU", "使用 CPU 執行，或安裝 CUDA 版 torch", required=False)
+    return Check("cuda", True, f"torch {torch.__version__} / {torch.cuda.get_device_name(0)}", required=False)
 
 
 def check_ffmpeg_gpu_encoders() -> Check:
     from vc.media import gpu_encoders
     encs = gpu_encoders()
     if not encs:
-        return Check("ffmpeg:gpu", False, "未偵測到硬體 H.264 編碼器（將自動回退 libx264）", "更新 GPU 驅動或確認 ffmpeg 含 nvenc/qsv/amf")
-    return Check("ffmpeg:gpu", True, ", ".join(encs))
+        return Check("ffmpeg:gpu", False, "未偵測到硬體 H.264 編碼器（將自動回退 libx264）", "更新 GPU 驅動或確認 ffmpeg 含 nvenc/qsv/amf", required=False)
+    return Check("ffmpeg:gpu", True, ", ".join(encs), required=False)
 
 
 def parse_major(version_text: str) -> int | None:
@@ -102,7 +102,7 @@ def check_version_tool(name: str, args: list[str], fix: str, required: bool = Tr
         return Check(name, False, "找不到", fix, required)
     try:
         res = run([exe, *args], timeout=120)
-    except Exception as exc:  # 逾時或無法執行都視為不可用，並保留原因
+    except Exception as exc:  # noqa: BLE001 - 診斷工具需回報所有執行失敗
         return Check(name, False, f"執行失敗：{exc}", fix, required)
     text = (res.stdout or res.stderr).strip().splitlines()
     first = text[0] if text else ""
@@ -171,6 +171,7 @@ def check_edge_tts_network() -> Check:
     """實際合成一句話，確認能連到微軟語音服務（公司 proxy 可能擋住）。"""
     try:
         import asyncio
+
         import edge_tts
 
         use_system_certs()
@@ -184,7 +185,7 @@ def check_edge_tts_network() -> Check:
 
         size = asyncio.run(asyncio.wait_for(_synth(), timeout=30))
         return Check("edge-tts:network", size > 0, f"收到 {size} bytes 音訊", required=False)
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 - 診斷外部語音服務時保留失敗原因
         return Check("edge-tts:network", False, f"{type(exc).__name__}: {exc}"[:80], "改用 Kokoro 後端", required=False)
 
 

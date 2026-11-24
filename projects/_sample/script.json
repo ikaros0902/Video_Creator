@@ -64,76 +64,89 @@
         "manual_one_part",
         "act_one_part"
       ],
-      "visuals": {
-        "internal": {
-          "kind": "recording",
-          "template": "vs_intro",
-          "clips": [
-            {
-              "recording": "rec02",
-              "source": [2.0, 8.0],
-              "label": "Built-in tool + manual repair",
-              "camera": "dolly_in"
-            },
-            {
-              "recording": "rec02",
-              "source": [20.0, 23.0],
-              "label": "Manual repair",
-              "start_at_word": "fixes",
-              "camera": "fixed"
-            },
-            {
-              "recording": "rec02",
-              "source": [35.0, 38.0],
-              "label": "Manual repair",
-              "camera": "fixed"
-            },
-            {
-              "recording": "rec02",
-              "source": [48.0, 51.0],
-              "label": "Manual cleanup complete",
-              "camera": "fixed"
-            },
-            {
-              "recording": "rec03",
-              "source": [12.0, 18.0],
-              "label": "Validator automated run",
-              "start_at_word": "Validator",
-              "camera": "fixed"
-            }
-          ],
-          "callouts": [
-            {
-              "at_word": "hand",
-              "box": [1200, 120, 420, 70],
-              "text": "Manual prep: ~3 min",
-              "clip": 3
-            },
-            {
-              "at_word": "six",
-              "box": [780, 260, 460, 140],
-              "text": "Validator run: 5.4 s",
-              "clip": 4
-            }
-          ],
-          "data": {
-            "timer_card": {
-              "clip": 0,
-              "text": "Same bracket · Hand: ~3 min vs Validator: 5.4 s"
-            },
-            "overlay_title": "CAD Batch Validator v3.0",
-            "logo": true
+      "visual": {
+        "kind": "recording",
+        "template": "vs_intro",
+        "clips": [
+          {
+            "recording": "rec02",
+            "source": [
+              2.0,
+              8.0
+            ],
+            "label": "Built-in tool + manual repair",
+            "camera": "dolly_in"
+          },
+          {
+            "recording": "rec02",
+            "source": [
+              20.0,
+              23.0
+            ],
+            "label": "Manual repair",
+            "start_at_word": "fixes",
+            "camera": "fixed"
+          },
+          {
+            "recording": "rec02",
+            "source": [
+              35.0,
+              38.0
+            ],
+            "label": "Manual repair",
+            "camera": "fixed"
+          },
+          {
+            "recording": "rec02",
+            "source": [
+              48.0,
+              51.0
+            ],
+            "label": "Manual cleanup complete",
+            "camera": "fixed"
+          },
+          {
+            "recording": "rec03",
+            "source": [
+              12.0,
+              18.0
+            ],
+            "label": "Validator automated run",
+            "start_at_word": "Validator",
+            "camera": "fixed"
           }
-        },
-        "public": {
-          "kind": "anim",
-          "template": "vs_intro_mock",
-          "data": {
-            "title": "Automated Thin-Shell Preparation",
-            "subtitle": "CAD Batch Validator v3.0",
-            "badge": "BEFORE VS AFTER",
-            "logo": false
+        ],
+        "callouts": [
+          {
+            "at_word": "hand",
+            "box": [
+              1200,
+              120,
+              420,
+              70
+            ],
+            "text": "Manual prep: ~3 min",
+            "clip": 3
+          },
+          {
+            "at_word": "six",
+            "box": [
+              780,
+              260,
+              460,
+              140
+            ],
+            "text": "Validator run: 5.4 s",
+            "clip": 4
           }
+        ],
+        "data": {
+          "timer_card": {
+            "clip": 0,
+            "text": "Same bracket · Hand: ~3 min vs Validator: 5.4 s"
+          },
+          "overlay_title": "CAD Batch Validator v3.0",
+          "logo": true
         }
       }
     },
@@ -146,38 +159,41 @@
         25
       ],
       "facts": [],
-      "visuals": {
-        "internal": {
-          "kind": "manim",
-          "template": "why_midsurface",
-          "data": {
-            "scene_class": "ThinShellScene",
-            "cues": [
-              {"what": "thin", "at_word": "thin"},
-              {"what": "blocks", "at_word": "blocks"},
-              {"what": "slow", "at_word": "slow"},
-              {"what": "replace", "at_word": "replace"},
-              {"what": "middle", "at_word": "middle"},
-              {"what": "name", "at_word": "midsurface"},
-              {"what": "number", "at_word": "number"}
-            ]
-          }
-        },
-        "public": {
-          "kind": "manim",
-          "template": "why_midsurface",
-          "data": {
-            "scene_class": "ThinShellScene",
-            "cues": [
-              {"what": "thin", "at_word": "thin"},
-              {"what": "blocks", "at_word": "blocks"},
-              {"what": "slow", "at_word": "slow"},
-              {"what": "replace", "at_word": "replace"},
-              {"what": "middle", "at_word": "middle"},
-              {"what": "name", "at_word": "midsurface"},
-              {"what": "number", "at_word": "number"}
-            ]
-          }
+      "visual": {
+        "kind": "manim",
+        "template": "why_midsurface",
+        "data": {
+          "scene_class": "ThinShellScene",
+          "cues": [
+            {
+              "what": "thin",
+              "at_word": "thin"
+            },
+            {
+              "what": "blocks",
+              "at_word": "blocks"
+            },
+            {
+              "what": "slow",
+              "at_word": "slow"
+            },
+            {
+              "what": "replace",
+              "at_word": "replace"
+            },
+            {
+              "what": "middle",
+              "at_word": "middle"
+            },
+            {
+              "what": "name",
+              "at_word": "midsurface"
+            },
+            {
+              "what": "number",
+              "at_word": "number"
+            }
+          ]
         }
       }
     },
@@ -192,77 +208,63 @@
       "facts": [
         "builtin_pieces"
       ],
-      "visuals": {
-        "internal": {
-          "kind": "recording",
-          "template": "vs_result",
-          "clips": [
-            {
-              "recording": "rec02",
-              "source": [10.0, 15.0],
-              "label": "Built-in tool result",
-              "camera": "fixed"
-            },
-            {
-              "recording": "rec02",
-              "source": [16.0, 20.0],
-              "label": "Split into 8 pieces",
-              "start_at_word": "eight",
-              "camera": "dolly_in"
-            },
-            {
-              "recording": "rec02",
-              "source": [22.0, 27.0],
-              "label": "Disconnected bends",
-              "start_at_word": "bends",
-              "camera": "fixed"
-            },
-            {
-              "recording": "rec03",
-              "source": [18.0, 25.0],
-              "label": "Validator: 1 connected shell",
-              "start_at_word": "Validator",
-              "camera": "fixed"
-            }
-          ],
-          "callouts": [
-            {
-              "at_word": "eight",
-              "box": [180, 240, 320, 280],
-              "text": "8 split faces in model tree",
-              "clip": 1
-            }
-          ]
-        },
-        "public": {
-          "kind": "anim",
-          "template": "cards3",
-          "data": {
-            "heading": "Why Built-in Surface Pairing Fails",
-            "cards": [
-              {
-                "title": "Split Geometry",
-                "label": "Creates eight disconnected faces on one simple bracket",
-                "at_word": "eight"
-              },
-              {
-                "title": "Broken Bends",
-                "label": "Sharp corners lose shared topology links across walls",
-                "at_word": "bends"
-              },
-              {
-                "title": "Single Shell Output",
-                "label": "Validator builds one clean connected mid-plane body",
-                "at_word": "connected"
-              }
+      "visual": {
+        "kind": "recording",
+        "template": "vs_result",
+        "clips": [
+          {
+            "recording": "rec02",
+            "source": [
+              10.0,
+              15.0
             ],
-            "inset": {
-              "drawing": "offset_half",
-              "caption": "Continuous single-skin offset avoids bend gaps",
-              "at_word": "Validator"
-            }
+            "label": "Built-in tool result",
+            "camera": "fixed"
+          },
+          {
+            "recording": "rec02",
+            "source": [
+              16.0,
+              20.0
+            ],
+            "label": "Split into 8 pieces",
+            "start_at_word": "eight",
+            "camera": "dolly_in"
+          },
+          {
+            "recording": "rec02",
+            "source": [
+              22.0,
+              27.0
+            ],
+            "label": "Disconnected bends",
+            "start_at_word": "bends",
+            "camera": "fixed"
+          },
+          {
+            "recording": "rec03",
+            "source": [
+              18.0,
+              25.0
+            ],
+            "label": "Validator: 1 connected shell",
+            "start_at_word": "Validator",
+            "camera": "fixed"
           }
-        }
+        ],
+        "callouts": [
+          {
+            "at_word": "eight",
+            "box": [
+              180,
+              240,
+              320,
+              280
+            ],
+            "text": "8 split faces in model tree",
+            "clip": 1
+          }
+        ]
       }
     },
     {
@@ -278,48 +280,61 @@
         "thickness_vote_example",
         "audit_threshold"
       ],
-      "visuals": {
-        "internal": {
-          "kind": "manim",
-          "template": "theory",
-          "data": {
-            "scene_class": "OffsetMechanismScene",
-            "cues": [
-              {"what": "pair", "at_word": "matches"},
-              {"what": "step", "at_word": "step"},
-              {"what": "vote", "at_word": "scans"},
-              {"what": "largest", "at_word": "largest"},
-              {"what": "offset", "at_word": "copies"},
-              {"what": "inward", "at_word": "inward"},
-              {"what": "nopairs", "at_word": "break"},
-              {"what": "shapes", "at_word": "repairs"},
-              {"what": "hem", "at_word": "bridges"},
-              {"what": "dent", "at_word": "dents"},
-              {"what": "probe", "at_word": "checks"},
-              {"what": "review", "at_word": "review"}
-            ]
-          }
-        },
-        "public": {
-          "kind": "manim",
-          "template": "theory",
-          "data": {
-            "scene_class": "OffsetMechanismScene",
-            "cues": [
-              {"what": "pair", "at_word": "matches"},
-              {"what": "step", "at_word": "step"},
-              {"what": "vote", "at_word": "scans"},
-              {"what": "largest", "at_word": "largest"},
-              {"what": "offset", "at_word": "copies"},
-              {"what": "inward", "at_word": "inward"},
-              {"what": "nopairs", "at_word": "break"},
-              {"what": "shapes", "at_word": "repairs"},
-              {"what": "hem", "at_word": "bridges"},
-              {"what": "dent", "at_word": "dents"},
-              {"what": "probe", "at_word": "checks"},
-              {"what": "review", "at_word": "review"}
-            ]
-          }
+      "visual": {
+        "kind": "manim",
+        "template": "theory",
+        "data": {
+          "scene_class": "OffsetMechanismScene",
+          "cues": [
+            {
+              "what": "pair",
+              "at_word": "matches"
+            },
+            {
+              "what": "step",
+              "at_word": "step"
+            },
+            {
+              "what": "vote",
+              "at_word": "scans"
+            },
+            {
+              "what": "largest",
+              "at_word": "largest"
+            },
+            {
+              "what": "offset",
+              "at_word": "copies"
+            },
+            {
+              "what": "inward",
+              "at_word": "inward"
+            },
+            {
+              "what": "nopairs",
+              "at_word": "break"
+            },
+            {
+              "what": "shapes",
+              "at_word": "repairs"
+            },
+            {
+              "what": "hem",
+              "at_word": "bridges"
+            },
+            {
+              "what": "dent",
+              "at_word": "dents"
+            },
+            {
+              "what": "probe",
+              "at_word": "checks"
+            },
+            {
+              "what": "review",
+              "at_word": "review"
+            }
+          ]
         }
       }
     },
@@ -332,78 +347,85 @@
         13
       ],
       "facts": [],
-      "visuals": {
-        "internal": {
-          "kind": "recording",
-          "template": "sop",
-          "clips": [
-            {
-              "recording": "rec03",
-              "source": [2.0, 6.0],
-              "label": "1. Open settings",
-              "camera": "fixed"
-            },
-            {
-              "recording": "rec03",
-              "source": [6.0, 9.0],
-              "label": "2. Select bodies",
-              "start_at_word": "Second",
-              "camera": "dolly_in"
-            },
-            {
-              "recording": "rec03",
-              "source": [9.0, 12.0],
-              "label": "3. Start batch run",
-              "start_at_word": "Third",
-              "camera": "fixed"
-            },
-            {
-              "recording": "rec03",
-              "source": [20.0, 25.0],
-              "label": "4. Review summary & Finish",
-              "start_at_word": "Fourth",
-              "camera": "fixed"
-            }
-          ],
-          "callouts": [
-            {
-              "at_word": "settings",
-              "box": [220, 160, 340, 120],
-              "text": "Review tolerance rules",
-              "clip": 0
-            },
-            {
-              "at_word": "select",
-              "box": [400, 200, 600, 420],
-              "text": "Pick target sheet bodies",
-              "clip": 1
-            },
-            {
-              "at_word": "Finish",
-              "box": [780, 260, 460, 140],
-              "text": "Inspect pass/skip log",
-              "clip": 2
-            }
-          ]
-        },
-        "public": {
-          "kind": "anim",
-          "template": "steps4",
-          "data": {
-            "heading": "Four Steps From CAD To Verified Shell",
-            "steps": [
-              {"title": "Settings", "label": "Confirm thickness limits", "at_word": "settings"},
-              {"title": "Select", "label": "Pick assembly or parts", "at_word": "Second"},
-              {"title": "Run", "label": "Offset and patch edges", "at_word": "Third"},
-              {"title": "Finish", "label": "Check volume audit report", "at_word": "Fourth"}
+      "visual": {
+        "kind": "recording",
+        "template": "sop",
+        "clips": [
+          {
+            "recording": "rec03",
+            "source": [
+              2.0,
+              6.0
             ],
-            "inset": {
-              "drawing": "hole_in_plate",
-              "caption": "Circular holes stay normalized without jagged seams",
-              "at_word": "Finish"
-            }
+            "label": "1. Open settings",
+            "camera": "fixed"
+          },
+          {
+            "recording": "rec03",
+            "source": [
+              6.0,
+              9.0
+            ],
+            "label": "2. Select bodies",
+            "start_at_word": "Second",
+            "camera": "dolly_in"
+          },
+          {
+            "recording": "rec03",
+            "source": [
+              9.0,
+              12.0
+            ],
+            "label": "3. Start batch run",
+            "start_at_word": "Third",
+            "camera": "fixed"
+          },
+          {
+            "recording": "rec03",
+            "source": [
+              20.0,
+              25.0
+            ],
+            "label": "4. Review summary & Finish",
+            "start_at_word": "Fourth",
+            "camera": "fixed"
           }
-        }
+        ],
+        "callouts": [
+          {
+            "at_word": "settings",
+            "box": [
+              220,
+              160,
+              340,
+              120
+            ],
+            "text": "Review tolerance rules",
+            "clip": 0
+          },
+          {
+            "at_word": "select",
+            "box": [
+              400,
+              200,
+              600,
+              420
+            ],
+            "text": "Pick target sheet bodies",
+            "clip": 1
+          },
+          {
+            "at_word": "Finish",
+            "box": [
+              780,
+              260,
+              460,
+              140
+            ],
+            "text": "Inspect pass/skip log",
+            "clip": 2
+          }
+        ]
       }
     },
     {
@@ -420,65 +442,73 @@
         "assembly_depth",
         "skipped_parts"
       ],
-      "visuals": {
-        "internal": {
-          "kind": "recording",
-          "template": "full_chassis",
-          "clips": [
-            {
-              "recording": "rec01",
-              "source": [5.0, 9.0],
-              "label": "Open sample assembly",
-              "camera": "fixed"
-            },
-            {
-              "recording": "rec01",
-              "source": [10.0, 15.0],
-              "label": "Validator batch execution",
-              "start_at_word": "run",
-              "camera": "dolly_out"
-            },
-            {
-              "recording": "rec01",
-              "source": [40.0, 46.0],
-              "label": "Multi-level hierarchy",
-              "start_at_word": "deep",
-              "camera": "fixed"
-            },
-            {
-              "recording": "rec01",
-              "source": [60.0, 62.5],
-              "crop": [760, 240, 480, 140],
-              "label": "Batch report: Succeeded 24 | Skipped 3 | Failed 0",
-              "start_at_word": "checks",
-              "camera": "fixed"
-            }
-          ],
-          "callouts": [
-            {
-              "at_word": "deep",
-              "box": [160, 200, 320, 480],
-              "text": "4-6 nested assembly levels",
-              "clip": 2
-            }
-          ],
-          "data": {
-            "timer_card": {
-              "clip": 0,
-              "text": "24 parts succeeded · 0 failed · < 1 min"
-            }
+      "visual": {
+        "kind": "recording",
+        "template": "full_chassis",
+        "clips": [
+          {
+            "recording": "rec01",
+            "source": [
+              5.0,
+              9.0
+            ],
+            "label": "Open sample assembly",
+            "camera": "fixed"
+          },
+          {
+            "recording": "rec01",
+            "source": [
+              10.0,
+              15.0
+            ],
+            "label": "Validator batch execution",
+            "start_at_word": "run",
+            "camera": "dolly_out"
+          },
+          {
+            "recording": "rec01",
+            "source": [
+              40.0,
+              46.0
+            ],
+            "label": "Multi-level hierarchy",
+            "start_at_word": "deep",
+            "camera": "fixed"
+          },
+          {
+            "recording": "rec01",
+            "source": [
+              60.0,
+              62.5
+            ],
+            "crop": [
+              760,
+              240,
+              480,
+              140
+            ],
+            "label": "Batch report: Succeeded 24 | Skipped 3 | Failed 0",
+            "start_at_word": "checks",
+            "camera": "fixed"
           }
-        },
-        "public": {
-          "kind": "anim",
-          "template": "chassis_mock",
-          "data": {
-            "title": "Full Assembly Test (24 Metal Parts)",
-            "count": 24,
-            "depth_label": "Assembly Hierarchy: 4–6 Levels Deep",
-            "metric": "24",
-            "result_line": "Succeeded: 24 | Skipped: 3 | Failed: 0",
-            "at_word": "checks"
+        ],
+        "callouts": [
+          {
+            "at_word": "deep",
+            "box": [
+              160,
+              200,
+              320,
+              480
+            ],
+            "text": "4-6 nested assembly levels",
+            "clip": 2
+          }
+        ],
+        "data": {
+          "timer_card": {
+            "clip": 0,
+            "text": "24 parts succeeded · 0 failed · < 1 min"
           }
         }
       }
@@ -496,38 +526,34 @@
         "sheet_metal_parts",
         "batch_runtime"
       ],
-      "visuals": {
-        "internal": {
-          "kind": "manim",
-          "template": "roi_time",
-          "data": {
-            "scene_class": "RoiTimeScene",
-            "outro_title": "CAD Batch Validator v3.0",
-            "logo": true,
-            "cues": [
-              {"what": "grid", "at_word": "hand"},
-              {"what": "each", "at_word": "Each"},
-              {"what": "act", "at_word": "Validator"},
-              {"what": "result", "at_word": "minute"}
-            ]
-          }
-        },
-        "public": {
-          "kind": "manim",
-          "template": "roi_time",
-          "data": {
-            "scene_class": "RoiTimeScene",
-            "outro_title": "CAD Batch Validator v3.0",
-            "logo": false,
-            "cues": [
-              {"what": "grid", "at_word": "hand"},
-              {"what": "each", "at_word": "Each"},
-              {"what": "act", "at_word": "Validator"},
-              {"what": "result", "at_word": "minute"}
-            ]
-          }
+      "visual": {
+        "kind": "manim",
+        "template": "roi_time",
+        "data": {
+          "scene_class": "RoiTimeScene",
+          "outro_title": "CAD Batch Validator v3.0",
+          "logo": true,
+          "cues": [
+            {
+              "what": "grid",
+              "at_word": "hand"
+            },
+            {
+              "what": "each",
+              "at_word": "Each"
+            },
+            {
+              "what": "act",
+              "at_word": "Validator"
+            },
+            {
+              "what": "result",
+              "at_word": "minute"
+            }
+          ]
         }
       }
     }
-  ]
+  ],
+  "schema_version": 2
 }

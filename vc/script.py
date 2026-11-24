@@ -94,19 +94,20 @@ class Visual(BaseModel):
 
 
 class Scene(BaseModel):
-    id: str
+    id: str = Field(pattern=r"^[A-Za-z0-9_-]+$")
     section: str               # 必須在 meta.sections（或預設 SECTIONS）之內，由 check() 驗證
     narration: str
     budget_s: tuple[float, float]
     facts: list[str] = Field(default_factory=list)
-    visuals: dict[Literal[VARIANTS], Visual]  # type: ignore[valid-type]
+    visual: Visual
 
     @model_validator(mode="after")
     def _all_variants(self):
-        missing = set(VARIANTS) - set(self.visuals)
-        if missing:
-            raise ValueError(f"缺少版本的畫面：{sorted(missing)}")
         return self
+
+    @property
+    def visuals(self) -> dict[str, Visual]:
+        return {"main": self.visual}
 
 
 class GlossaryEntry(BaseModel):
@@ -116,6 +117,7 @@ class GlossaryEntry(BaseModel):
 
 
 class Script(BaseModel):
+    schema_version: Literal[2] = 2
     meta: Meta
     lexicon: dict[str, str] = Field(default_factory=dict)  # TTS 前的文字替換
     glossary: list[GlossaryEntry] = Field(default_factory=list)
@@ -228,10 +230,6 @@ def check(script: Script, facts: dict[str, Fact], rec_durations: dict[str, float
                 errors.append(f"{s.id}: 旁白出現內部術語「{term}」")
 
         for variant, v in s.visuals.items():
-            if variant == "public" and v.kind not in PUBLIC_ALLOWED_KINDS:
-                errors.append(f"{s.id}: public 版不能使用 {v.kind}（只能用重新畫的動畫）")
-            if variant == "public" and v.images:
-                errors.append(f"{s.id}: public 版不能使用 PPT 圖片 {v.images}")
             for img in v.images:
                 if work_dir is not None and not (work_dir / img).is_file():
                     errors.append(f"{s.id}/{variant}: 找不到圖片 {img}")

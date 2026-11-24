@@ -43,7 +43,9 @@ def count_frames(path: Path) -> int:
 
 
 def clip_key(clip: dict, fps: int) -> str:
+    from vc.pipeline_safety import file_hash
     fields = {k: clip[k] for k in ("source_file", "source", "crop", "speed", "freeze_frames", "duration_frames")}
+    fields["source_hash"] = file_hash(Path(clip["source_file"]))
     return hashlib.sha1(json.dumps([fields, fps], sort_keys=True).encode()).hexdigest()[:16]
 
 
@@ -53,15 +55,21 @@ def fit_all(tl: dict, work: Path, use_gpu: bool = True) -> list[dict]:
     old = json.loads(man_path.read_text(encoding="utf-8")) if man_path.is_file() else {}
     new, report = {}, []
     for sc in tl["scenes"]:
-        for clip in sc["visuals"]["internal"].get("clips", []):
+        for clip in sc["visuals"]["main"].get("clips", []):
             out = work / clip["file"]
             key = clip_key(clip, fps)
             made = False
-            if not (old.get(clip["file"]) == key and out.is_file()):
+            from vc.pipeline_safety import media_is_current
+            if not (old.get(clip["file"]) == key and out.is_file() and media_is_current(out, tl)):
                 out.unlink(missing_ok=True)
                 render_clip(clip, fps, out, use_gpu=use_gpu)
                 made = True
             n = count_frames(out)
+            from vc.pipeline_safety import mark_media
+            if n == clip["duration_frames"]:
+                mark_media(out, tl)
+            else:
+                out.with_suffix(out.suffix + '.json').unlink(missing_ok=True)
             new[clip["file"]] = key
             report.append({"file": clip["file"], "expected": clip["duration_frames"], "frames": n, "made": made})
     man_path.parent.mkdir(parents=True, exist_ok=True)

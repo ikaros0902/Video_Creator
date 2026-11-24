@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>影片設計工作區</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f4f2ec;color:#172722;font:16px system-ui,sans-serif}header{padding:28px 4vw;border-bottom:1px solid #c8d0c8;display:flex;justify-content:space-between;align-items:end}h1{font:600 32px Georgia,serif;margin:0 0 8px}p{line-height:1.6}main{display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:28px;margin:28px 4vw}section,aside{min-width:0}button,input,textarea,select{font:inherit}button{background:#164b3b;color:white;border:0;padding:10px 16px;cursor:pointer;border-radius:3px}button.secondary{background:#e0e6df;color:#173c30}button:disabled{opacity:.45;cursor:default}label{display:grid;gap:6px;margin:14px 0}input,textarea,select{width:100%;padding:8px;border:1px solid #9ca99f;background:white;color:#172722}textarea{min-height:74px;resize:vertical}aside{background:#fff;padding:20px;border:1px solid #ced4ca;align-self:start}#choices{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}.frame{position:relative;width:100%;aspect-ratio:16/9;background:#fff;overflow:hidden;box-shadow:0 4px 24px #17272218}.stage{position:absolute;width:1920px;height:1080px;transform-origin:top left;overflow:hidden}.stage article{height:100%;display:flex;flex-direction:column}.eyebrow{font-size:24px;text-transform:uppercase;letter-spacing:3px}.scene-title{margin:0;line-height:1.15;overflow-wrap:anywhere}.scene-subtitle{margin:0}.scene-copy{margin:0;overflow-wrap:anywhere;white-space:pre-wrap}.caption{color:#526458;font-size:14px}.card{background:#fff;border:1px solid #ced4ca;padding:20px;margin:24px 0}.card h2{margin:0 0 12px;font-size:20px}.reference{padding:12px 0;border-top:1px solid #dce1d8}.reference p{margin:6px 0}#status{white-space:pre-wrap;min-height:24px}#issues li{margin:8px 0}.warning{color:#9a3b22}a{color:#164b3b}summary{cursor:pointer;font-weight:600}@media(max-width:900px){main{grid-template-columns:1fr}aside{grid-row:1}header{display:block}}
+</style></head><body>
+<header><div><h1>影片設計工作區</h1><div id="scene-label"></div></div><div class="caption">先比較方向，再記錄選擇。</div></header>
+<main><section>
+<p class="caption">此頁比較場景文字的排版與色彩，不代表動畫、錄影或音訊的最終合成畫面。正式輸出前請檢視實際影片。</p>
+<div id="choices" role="group" aria-label="風格方向"></div>
+<div class="frame" id="frame"><div class="stage" id="stage"><article id="composition"><div class="eyebrow" id="eyebrow"></div><h2 class="scene-title" id="title"></h2><p class="scene-subtitle" id="subtitle"></p><p class="scene-copy" id="copy"></p></article></div></div>
+<div class="card"><h2>排版檢查</h2><p class="caption">檢查本頁可觀察的文字越界、重疊、最小字級與對比。這些檢查不能代替人工審美判斷。</p><ul id="issues"></ul><button class="secondary" id="repair">預覽邊界修正</button></div>
+<div class="card"><h2>設計簡報</h2><label>受眾<input id="audience"></label><label>目的<input id="purpose"></label><label>主要訊息<textarea id="message"></textarea></label><label>避免事項（一行一項）<textarea id="avoid"></textarea></label><button id="brief-save">儲存簡報</button></div>
+<div class="card"><h2>靈感來源</h2><p class="caption">來源與人工註記獨立保存，不會被當作已確認的影片事實。使用 creative import 命令新增。</p><div id="references"></div></div>
+</section><aside><h2>風格調整</h2>
+<label>標題字體<input id="heading-font"></label><label>內文字體<input id="body-font"></label>
+<label>內文字級 <output id="base-value"></output><input id="base" type="range" min="18" max="60" step="1"></label>
+<label>標題比例<input id="ratio" type="range" min="1" max="2" step="0.01"></label>
+<label>行高<input id="line-height" type="range" min="1" max="2" step="0.05"></label>
+<label>字距<input id="letter-spacing" type="range" min="-2" max="8" step="0.1"></label>
+<label>內容間距<input id="gap" type="range" min="8" max="120" step="1"></label>
+<label>安全邊界<input id="margin" type="range" min="60" max="160" step="1"></label>
+<label>背景<input id="background" type="color"></label><label>主要文字<input id="foreground" type="color"></label><label>強調色<input id="accent" type="color"></label>
+<label>選擇或調整理由<textarea id="reason" placeholder="說明這個方向如何幫助受眾理解內容"></textarea></label>
+<button id="save">儲存並套用風格</button> <button class="secondary" id="reset">還原預覽</button>
+<p id="save-note" class="caption"></p><p id="status" role="status" aria-live="polite"></p>
+</aside></main>
+<script>
+const state=__STATE__;
+const el=id=>document.getElementById(id);
+let selected=structuredClone(state.current),original=structuredClone(selected);
+const controls=['heading-font','body-font','base','ratio','line-height','letter-spacing','gap','margin','background','foreground','accent'];
+el('scene-label').textContent=`場景 ${state.scene.id}`;
+for(const [id,key] of [['title','title'],['subtitle','subtitle'],['copy','narration']]) el(id).textContent=state.scene[key];
+el('eyebrow').textContent=state.scene.id;
+function populate(){const t=selected.tokens,ty=t.typography;el('heading-font').value=ty.heading_font;el('body-font').value=ty.body_font;el('base').value=ty.base_size_px;el('ratio').value=ty.scale_ratio;el('line-height').value=ty.line_height??1.4;el('letter-spacing').value=ty.letter_spacing_px??0;el('gap').value=ty.content_gap_px??28;el('margin').value=t.spacing.safe_margin_px;el('background').value=t.colors.background;el('foreground').value=t.colors.text_primary;el('accent').value=t.colors.accent;paint()}
+function update(){const t=selected.tokens,ty=t.typography;ty.heading_font=el('heading-font').value;ty.body_font=el('body-font').value;ty.base_size_px=+el('base').value;ty.scale_ratio=+el('ratio').value;ty.line_height=+el('line-height').value;ty.letter_spacing_px=+el('letter-spacing').value;ty.content_gap_px=+el('gap').value;t.spacing.safe_margin_px=+el('margin').value;t.colors.background=el('background').value;t.colors.text_primary=el('foreground').value;t.colors.accent=el('accent').value;paint()}
+function paint(){const t=selected.tokens,ty=t.typography,stage=el('stage'),body=el('composition');stage.style.background=t.colors.background;stage.style.color=t.colors.text_primary;body.style.padding=t.spacing.safe_margin_px+'px';body.style.gap=(ty.content_gap_px??28)+'px';body.style.fontFamily=ty.body_font;body.style.fontSize=ty.base_size_px+'px';body.style.lineHeight=ty.line_height??1.4;body.style.letterSpacing=(ty.letter_spacing_px??0)+'px';el('title').style.fontFamily=ty.heading_font;el('title').style.fontSize=ty.base_size_px*Math.pow(ty.scale_ratio,3)+'px';el('eyebrow').style.color=t.colors.accent;el('subtitle').style.color=t.colors.text_secondary;el('base-value').value=ty.base_size_px+' px';resize();requestAnimationFrame(audit)}
+function resize(){el('stage').style.transform=`scale(${el('frame').clientWidth/1920})`}
+function luminance(hex){const v=hex.match(/[0-9a-f]{2}/gi).map(x=>parseInt(x,16)/255).map(x=>x<=.04045?x/12.92:((x+.055)/1.055)**2.4);return v[0]*.2126+v[1]*.7152+v[2]*.0722}
+function contrast(a,b){const x=[luminance(a),luminance(b)].sort((a,b)=>a-b);return (x[1]+.05)/(x[0]+.05)}
+function audit(){const issues=[],bounds=el('stage').getBoundingClientRect(),scale=bounds.width/1920,items=['eyebrow','title','subtitle','copy'].map(el).filter(x=>x.textContent.trim());for(const item of items){const r=item.getBoundingClientRect();if(r.left<bounds.left-1||r.top<bounds.top-1||r.right>bounds.right+1||r.bottom>bounds.bottom+1)issues.push({type:'bounds',text:`${item.id}：文字超出畫面，請縮減文字、字級或間距。`});if(parseFloat(getComputedStyle(item).fontSize)<18)issues.push({type:'size',text:`${item.id}：字級小於 18 px。`})}for(let i=0;i<items.length;i++)for(let j=i+1;j<items.length;j++){const a=items[i].getBoundingClientRect(),b=items[j].getBoundingClientRect();if(Math.min(a.right,b.right)-Math.max(a.left,b.left)>scale&&Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top)>scale)issues.push({type:'overlap',text:`${items[i].id} 與 ${items[j].id} 重疊。`})}const c=selected.tokens.colors;for(const [name,key] of [['主要文字','text_primary'],['次要文字','text_secondary'],['強調色','accent']]){const ratio=contrast(c[key],c.background);if(ratio<4.5)issues.push({type:'contrast',text:`${name}對比 ${ratio.toFixed(2)}:1，需至少 4.5:1。`})}el('issues').replaceChildren();for(const issue of issues){const li=document.createElement('li');li.textContent=issue.text;li.className='warning';el('issues').append(li)}if(!issues.length){const li=document.createElement('li');li.textContent='目前沒有偵測到上述排版問題。';el('issues').append(li)}window.layoutIssues=issues;return issues}
+function repair(){const ty=selected.tokens.typography;for(let i=0;i<20;i++){const bounds=el('stage').getBoundingClientRect(),bottom=el('copy').getBoundingClientRect().bottom;if(bottom<=bounds.bottom)break;if((ty.content_gap_px??28)>8)ty.content_gap_px=Math.max(8,(ty.content_gap_px??28)-4);else if(ty.base_size_px>18)ty.base_size_px--;else break;paint()}populate();el('status').textContent='已預覽邊界修正。請檢查內容，再決定是否儲存。'}
+for(const item of state.styles){const button=document.createElement('button');button.textContent=item.style.name??item.id;button.className='secondary';button.onclick=()=>{selected=structuredClone(item.style);original=structuredClone(selected);populate();el('status').textContent='已切換預覽，尚未修改專案。'};el('choices').append(button)}
+for(const id of controls)el(id).addEventListener('input',update);
+el('reset').onclick=()=>{selected=structuredClone(original);populate();el('status').textContent='已還原預覽。'};
+el('repair').onclick=repair;
+async function save(path,data){el('status').textContent='儲存中…';try{const response=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json','X-VC-Token':state.token},body:JSON.stringify(data)});const result=await response.json();if(!response.ok)throw Error(result.error);el('status').textContent='已儲存，修改前資料位於 design/backups。'}catch(error){el('status').textContent=error.message}}
+el('save').onclick=()=>{if(audit().length){el('status').textContent='請先處理排版檢查問題。';return}if(!el('reason').value.trim()){el('status').textContent='請填寫選擇或調整理由。';return}save('/api/style',{style:selected,reason:el('reason').value})};
+for(const id of ['audience','purpose','message'])el(id).value=state.brief[id]??'';el('avoid').value=(state.brief.avoid??[]).join('\n');
+el('brief-save').onclick=()=>save('/api/brief',{audience:el('audience').value,purpose:el('purpose').value,message:el('message').value,avoid:el('avoid').value.split('\n').map(x=>x.trim()).filter(Boolean)});
+for(const record of state.references){const item=document.createElement('div');item.className='reference';for(const value of [record.title,`來源：${record.source}`,`人工註記：${record.notes}`,`標籤：${record.tags.join('、')}`]){const p=document.createElement('p');p.textContent=value;item.append(p)}el('references').append(item)}if(!state.references.length)el('references').textContent='尚未加入靈感來源。';
+if(!state.token){el('save').disabled=true;el('brief-save').disabled=true;el('save-note').textContent='這是唯讀檔案預覽。使用 creative serve 開啟可儲存的本機工作區。'}else el('save-note').textContent='只有按下儲存才會修改專案。請在同一個本機網址開啟此頁。';
+window.addEventListener('resize',()=>{resize();requestAnimationFrame(audit)});populate();
+</script></body></html>

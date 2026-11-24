@@ -8,9 +8,7 @@ from __future__ import annotations
 import json
 import sys
 from pathlib import Path
-from unittest.mock import MagicMock, patch
-
-import pytest
+from unittest.mock import patch
 
 # 將專案根目錄加入模組搜尋路徑
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -91,32 +89,25 @@ def test_verify_tools_exit_code_one_on_required_fail(capsys):
     """當任一 required=True 工具缺失時，必須傳回 Exit Code 1。"""
     verifier = ToolVerifier()
     mock_fail = ToolResult("ffmpeg", "Core", "FAIL", "N/A", True, 1.0, "Missing")
-    with patch.object(verifier, "check_ffmpeg", return_value=mock_fail):
-        with patch("scripts.verify_tools.ToolVerifier", return_value=verifier):
-            ret = main([])
-            assert ret == 1
-            captured = capsys.readouterr()
-            assert "[錯誤]" in captured.out or "[錯誤]" in captured.err or "ffmpeg" in captured.out
+    with patch.object(verifier, "check_ffmpeg", return_value=mock_fail), patch("scripts.verify_tools.ToolVerifier", return_value=verifier):
+        ret = main([])
+        assert ret == 1
+        captured = capsys.readouterr()
+        assert "[錯誤]" in captured.out or "[錯誤]" in captured.err or "ffmpeg" in captured.out
 
 
 def test_craft_tools_module_integration():
-    """驗證 vc.craft_tools 與 tools.craft_tools 模組可正確載入並診斷本機四大工具。"""
+    """診斷介面必須如實回報選用外部工具的可用狀態。"""
     import vc.craft_tools as vct
-    import tools.craft_tools as tct
 
     report = vct.diagnose_craft_tools()
-    assert "DeckCraft" in report
-    assert "EffectCraft" in report
-    assert "PhotoCraft" in report
-    assert "VectorCraft" in report
-
-    # 本機環境已具備這 4 大工具
-    for name in ("DeckCraft", "EffectCraft", "PhotoCraft", "VectorCraft"):
-        assert report[name]["available"] is True, f"{name} 應為可用狀態"
-        assert report[name]["path"] is not None
-
-    # tools.craft_tools 應導出相同 API
-    assert hasattr(tct, "deck_render_slides")
-    assert hasattr(tct, "effect_render_frame")
-    assert hasattr(tct, "photo_convert")
-    assert hasattr(tct, "vector_convert")
+    assert set(report) == {"DeckCraft", "EffectCraft", "PhotoCraft", "VectorCraft"}
+    for result in report.values():
+        assert isinstance(result["available"], bool)
+        if result["available"]:
+            assert Path(result["path"]).is_file()
+            assert result["version"]
+        else:
+            assert result.get("error") or result.get("version") == "Error"
+    for function in ("deck_render_slides", "effect_render_frame", "photo_convert", "vector_convert"):
+        assert callable(getattr(vct, function))

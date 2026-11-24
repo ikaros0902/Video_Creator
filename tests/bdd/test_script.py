@@ -6,7 +6,6 @@ from pytest_bdd import given, parsers, scenarios, then, when
 
 from vc.project import resolve_project_dir
 from vc.script import check, load_facts, load_script
-from vc.tools import ROOT
 
 scenarios("script.feature")
 scenarios("script_exec.feature")
@@ -59,29 +58,29 @@ def no_scope(ctx, fid):
 
 @when(parsers.parse('the timer card of scene "{sid}" says "{text}"'))
 def set_timer_card(ctx, sid, text):
-    _scene(ctx, sid).visuals["internal"].data["timer_card"]["text"] = text
+    _scene(ctx, sid).visual.data["timer_card"]["text"] = text
 
 
-@when(parsers.parse('the public visual of scene "{sid}" uses the internal recording'))
-def public_recording(ctx, sid):
-    s = _scene(ctx, sid)
-    s.visuals["public"] = s.visuals["internal"].model_copy(deep=True)
+@when(parsers.parse('the visual of scene "{sid}" retains its recording'))
+def retain_recording(ctx, sid):
+    assert _scene(ctx, sid).visual.kind == "recording"
+    assert _scene(ctx, sid).visual.clips
 
 
-@when(parsers.parse('the public visual of scene "{sid}" adds the picture "{img}"'))
-def public_picture(ctx, sid, img):
-    _scene(ctx, sid).visuals["public"].images.append(img)
+@when(parsers.parse('the visual of scene "{sid}" adds the picture "{img}"'))
+def add_picture(ctx, sid, img):
+    _scene(ctx, sid).visual.images.append(img)
 
 
 @when(parsers.parse('clip {k:d} of scene "{sid}" ends at {end:g} seconds'))
 def clip_end(ctx, k, sid, end):
-    clip = _scene(ctx, sid).visuals["internal"].clips[k]
+    clip = _scene(ctx, sid).visual.clips[k]
     clip.source = (clip.source[0], end)
 
 
 @when(parsers.parse('callout {k:d} of scene "{sid}" is linked to the word "{word}"'))
 def callout_word(ctx, k, sid, word):
-    _scene(ctx, sid).visuals["internal"].callouts[k].at_word = word
+    _scene(ctx, sid).visual.callouts[k].at_word = word
 
 
 @when(parsers.parse('scenes "{a}" and "{b}" change places'))

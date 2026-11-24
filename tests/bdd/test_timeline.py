@@ -1,8 +1,7 @@
 """features/timeline.feature 的步驟實作。配音長度與逐字時間是合成的，錄影用 FFmpeg 產生。"""
 from __future__ import annotations
 
-import hashlib
-from pathlib import Path
+import itertools
 
 import pytest
 from pytest_bdd import given, parsers, scenarios, then, when
@@ -11,8 +10,6 @@ from vc import fit, plan
 from vc.media import ffmpeg_run, probe
 from vc.project import resolve_project_dir
 from vc.script import load_script
-from vc.tools import ROOT, run
-from vc.media import ffmpeg
 
 scenarios("timeline.feature")
 
@@ -53,7 +50,7 @@ def build(ctx):
 
 @given(parsers.parse('clip {k:d} of scene "{sid}" uses {sec:g} seconds of source video'))
 def long_clip(ctx, k, sid, sec):
-    clip = next(s for s in ctx["script"].scenes if s.id == sid).visuals["internal"].clips[k]
+    clip = next(s for s in ctx["script"].scenes if s.id == sid).visuals["main"].clips[k]
     clip.source = (clip.source[0], clip.source[0] + sec)
 
 
@@ -72,7 +69,7 @@ def _scene(ctx, sid):
 @then("each scene starts on the frame where the previous scene ends")
 def contiguous(ctx):
     sc = ctx["tl"]["scenes"]
-    for a, b in zip(sc, sc[1:]):
+    for a, b in itertools.pairwise(sc):
         assert a["start_frame"] + a["duration_frames"] == b["start_frame"]
 
 
@@ -102,10 +99,10 @@ def audio_inside(ctx):
         assert s["start_frame"] <= a["start_frame"] < s["start_frame"] + s["duration_frames"]
 
 
-@then(parsers.parse('the internal clips of scene "{sid}" cover the scene with no gap and no overlap'))
+@then(parsers.parse('the clips of scene "{sid}" cover the scene with no gap and no overlap'))
 def cover(ctx, sid):
     s = _scene(ctx, sid)
-    clips = s["visuals"]["internal"]["clips"]
+    clips = s["visuals"]["main"]["clips"]
     pos = 0
     for c in clips:
         assert c["start_frame"] == pos
@@ -117,13 +114,13 @@ def cover(ctx, sid):
 def clip_on_word(ctx, k, sid, word):
     s = _scene(ctx, sid)
     w = next(x for x in ctx["aligned"]["scenes"][sid]["words"] if x["word"].strip(".,") == word)
-    assert s["visuals"]["internal"]["clips"][k]["start_frame"] == s["narration_start_frame"] + round(w["start"] * 30)
+    assert s["visuals"]["main"]["clips"][k]["start_frame"] == s["narration_start_frame"] + round(w["start"] * 30)
 
 
 @then(parsers.parse("no clip plays faster than {x:g} times normal speed"))
 def speed_cap(ctx, x):
     for s in ctx["tl"]["scenes"]:
-        for c in s["visuals"]["internal"].get("clips", []):
+        for c in s["visuals"]["main"].get("clips", []):
             assert c["speed"] <= x
 
 
@@ -135,7 +132,7 @@ def rejected(ctx, text):
 @then(parsers.parse('the callout for "{word}" in scene "{sid}" appears on the frame of that word'))
 def callout_frame(ctx, word, sid):
     s = _scene(ctx, sid)
-    co = next(c for c in s["visuals"]["internal"]["callouts"] if c["at_word"] == word)
+    co = next(c for c in s["visuals"]["main"]["callouts"] if c["at_word"] == word)
     w = next(x for x in ctx["aligned"]["scenes"][sid]["words"] if x["word"].strip(".,") == word)
     assert co["frame"] == s["narration_start_frame"] + round(w["start"] * 30)
 
@@ -197,7 +194,7 @@ def frozen(ctx, n):
             break
         frames.append(f.astype(np.int16))
     cap.release()
-    diffs = [float(np.mean(np.abs(a - b))) for a, b in zip(frames, frames[1:])]
+    diffs = [float(np.mean(np.abs(a - b))) for a, b in itertools.pairwise(frames)]
     still = diffs[-(n - 1):]
     moving = diffs[: len(diffs) - n]
     # 實測：重複影格差約 0.003–0.01，testsrc 換格時差約 1.2

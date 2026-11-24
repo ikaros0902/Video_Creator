@@ -21,9 +21,10 @@
     "@marp-team/marp-cli": "^4.5.1",
     "capcut-cli": "~0.33.1",
     "gsap": "^3.14.2",
-    "hyperframes": "~0.9.26"
+    "hyperframes": "^0.9.88"
   },
   "allowScripts": {
-    "esbuild@0.28.2": true
+    "esbuild@0.28.2": true,
+    "esbuild@0.28.1": true
   }
 }

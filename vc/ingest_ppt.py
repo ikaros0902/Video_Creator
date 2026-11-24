@@ -144,7 +144,7 @@ def export_previews(pptx_path: Path, out_dir: Path, width: int = 1920, height: i
     res = subprocess.run(
         ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(script),
          str(pptx_path), str(prev_dir), str(width), str(height)],
-        capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=600,
+        capture_output=True, check=False, text=True, encoding="utf-8", errors="replace", timeout=600,
     )
     script.unlink(missing_ok=True)
     if res.returncode != 0:
@@ -160,8 +160,11 @@ def main(argv: list[str]) -> int:
     if proj.pptx is None:
         print("project.yaml 沒有設定 pptx", file=sys.stderr)
         return 1
+    from vc.pipeline_safety import file_hash
+    source_hash = file_hash(proj.pptx)
     proj.work.mkdir(parents=True, exist_ok=True)
     data = extract(proj.pptx, proj.work)
+    previews_current = False
 
     if "--no-preview" not in argv:
         from vc.doctor import check_powerpoint
@@ -171,10 +174,17 @@ def main(argv: list[str]) -> int:
                 f = proj.work / "slides" / "previews" / f"slide_{s['index']:02d}.png"
                 if f.is_file():
                     s["preview"] = f"slides/previews/{f.name}"
+            previews_current = n == len(data["slides"]) and all("preview" in s for s in data["slides"])
             print(f"預覽圖：{n} 張")
         else:
             print("找不到 PowerPoint，略過預覽圖")
 
+    if source_hash != file_hash(proj.pptx):
+        print("簡報在匯入期間變更，請重新執行。", file=sys.stderr)
+        return 1
+    data["source_sha256"] = source_hash
+    if previews_current:
+        data["preview_source_sha256"] = source_hash
     out = proj.work / "slides.json"
     out.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
     pics = sum(len(s["pictures"]) for s in data["slides"])
