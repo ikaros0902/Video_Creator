@@ -10,7 +10,7 @@ compatibility: Python 3.11 and the Video Creator repository
 2. Read the current `work/timeline.json` contract.
 3. Use frame values from the narration timeline.
 4. Keep local asset paths relative to the rendering workspace.
-5. Separate internal and public variants.
+5. Use the single visual setting for each scene.
 6. Derive visual state from the current frame.
 7. Keep random values seeded when they affect frames.
 8. Run project validation before rendering.

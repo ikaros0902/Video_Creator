@@ -1,4 +1,4 @@
-# Visual, Typography & Audio Standards (`01_rules/03_visual_and_audio_standards.md`)
+# Visual, Typography & Audio Standards
 
 All pipeline exports adhere to deterministic broadcast and accessibility thresholds verified by `vc` modules.
 
@@ -7,15 +7,15 @@ All pipeline exports adhere to deterministic broadcast and accessibility thresho
 - **Resolution**: `1920x1080` (`16:9`), `30 fps`, progressive H.264 (`yuv420p`, `movflags +faststart`).
 - **Safe Margins**: Keep critical titles, callouts, and cards inside `120 px` horizontal and `80 px` vertical inset.
 - **Subtitle Reserve**: Keep bottom `160 px` clear of cards and charts; Remotion renders burned captions there.
-- **Color Contrast**: Maintain `>= 4.5:1` luminance contrast against `#0B1220` dark navy background (see `04_styles/01_executive_navy/`).
+- **Color Contrast**: Maintain `>= 4.5:1` luminance contrast against `#0B1220` dark navy background (see `styles/executive_navy/`).
 
 ## 2. Audio & Loudness Targets (`vc/voice.py` & `vc/render.py`)
 
 - **Intermediate Narration**: `48000 Hz`, `mono`, 16-bit PCM WAV, trimmed silence boundaries (`trim_silence`).
 - **Speaking Rate Target**: `130–165 WPM`; estimation baseline `150 WPM`.
 - **Master Final Mix (EBU R128)**:
-  - Integrated loudness: `-16.0 LUFS` (`tolerance <= 1.0 LU`)
-  - True Peak ceiling: `-1.5 dBTP` (`hard fail > -0.8 dBTP`)
+  - Integrated loudness: `-14.0 LUFS` by default (`tolerance <= 1.0 LU`), configurable per project.
+  - True Peak ceiling: `-1.5 dBTP` by default, with a `0.1 dB` validation tolerance.
   - BGM auto-ducking: `-20 dB` below voice during narration; `-14 dB` during scene pauses.
 
 ## 3. Captions & Alignment (`vc/align.py`)

@@ -1,5 +1,7 @@
 # Video Creator 目錄結構規範與架構手冊 (DIRECTORY_STRUCTURE_SPEC.md)
 
+> 此文件記錄早期目錄遷移設計，部分細節已過時。實際目錄、單一影片流程與命令請以 [README](../README.md) 和 [架構說明](01_architecture.md) 為準。
+
 ---
 
 ## 1. 架構全景視圖 (Architecture Overview)
@@ -64,9 +66,9 @@ d:\Ikaros\Video_Creator/
 ├── styles/                   # 視覺主題包與 Design Tokens（executive_navy, swiss_kinetic, blueprint 等）
 ├── assets/                   # 全域共用資產庫（不可變唯讀素材）
 │   ├── brand/                # 企業、合作夥伴與開源專案向量/高清 Logo
-│   └── templates/            # 共用視覺底圖、網格紋理與通用免版稅配樂 (BGM)
+│   └── templates/            # 共用視覺底圖、網格紋理與配樂素材 (BGM)
 │       ├── backgrounds/      # 共用背景圖 (bg_navy_glow.jpg, bg_navy_grid.jpg)
-│       └── audio/            # 共用音訊素材 (bgm_midsurface.mp3, bgm.mp3)
+│       └── audio/            # 共用音訊素材 (background_music_01.mp3, background_music_02.mp3)
 ├── packages/                 # 整合式單元包
 │   └── remotion/             # Remotion React 19 合成母時間軸專案 (npm workspaces 管理)
 ├── tools/                    # 免安裝綠色二進位與專案工具鏈 (FFmpeg, Recordly, pyJianYingDraft 等)

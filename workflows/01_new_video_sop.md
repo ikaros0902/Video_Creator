@@ -1,20 +1,20 @@
-# 新影片專案端到端實戰 SOP（`02_workflows/01_new_video_sop.md`）
+# 新影片專案端到端實戰 SOP
 
-只要按照以下 10 個指令順序執行，就能把一份簡報與幾段螢幕錄影，自動產出同步精準的 1080p 雙軌影片。
+依序準備素材、驗證腳本並執行以下命令，產生單一版本的影片。範例未附帶簡報和錄影，請自行準備。
 
 ## 步驟 0：檢查環境與 GPU 就緒狀態
 
 ```powershell
 .venv\Scripts\python.exe -m vc doctor
 ```
-確認 `python`、`cuda`、`ffmpeg`、`ffmpeg:gpu`（如 `h264_nvenc`）、`hyperframes` 與 `remotion` 皆為 `OK`。
+確認必要項目通過。CUDA 和硬體編碼為選用項目；不可用時可使用 CPU。
 
 ## 步驟 1：建立專屬專案資料夾
 
 ```powershell
-Copy-Item -Recurse 06_projects/_sample 06_projects/my_demo
+Copy-Item -Recurse projects/_sample projects/my_demo
 ```
-將原始 `.pptx` 與 `.mp4` 錄影放入 `06_projects/my_demo/input/`（此資料夾會自動被 Git 忽略），並更新 `project.yaml`。
+將原始 `.pptx` 與 `.mp4` 錄影放入 `projects/my_demo/input/`（此資料夾會自動被 Git 忽略），並更新 `project.yaml`。
 
 ## 步驟 2：提取素材特徵（不複製大檔）
 
@@ -35,7 +35,7 @@ Copy-Item -Recurse 06_projects/_sample 06_projects/my_demo
 ## 步驟 4：產生高品質配音（Kokoro / Edge）
 
 ```powershell
-.venv\Scripts\python.exe -m vc voice my_demo
+.venv\Scripts\python.exe -m vc voice my_demo --preview
 ```
 會自動略過未更動的段落並產出串接試聽檔，先聽語速與發音（難字可在 `lexicon` 補音標替換）。
 
@@ -44,7 +44,7 @@ Copy-Item -Recurse 06_projects/_sample 06_projects/my_demo
 ```powershell
 .venv\Scripts\python.exe -m vc align my_demo
 ```
-產生 `work/align/words.json` 與 `work/subtitles.srt`。所有動畫 `at_word` 觸發點都會在此精確對位。
+產生 `work/align/words.json` 與 `work/align/preview.srt`。動畫 `at_word` 觸發點依據對齊結果計算。
 
 ## 步驟 6：建置零漂移影格時間軸
 
@@ -65,10 +65,9 @@ Copy-Item -Recurse 06_projects/_sample 06_projects/my_demo
 ## 步驟 8：總裝算圖與響度標準化
 
 ```powershell
-.venv\Scripts\python.exe -m vc render my_demo --variant all --name v1
+.venv\Scripts\python.exe -m vc render my_demo --name v1
 ```
-若需僅產出公開脫敏版：將 `--variant all` 改為 `--variant public`。
-輸出位於 `06_projects/my_demo/output/internal/v1.mp4` 與 `output/public/v1.mp4`。
+輸出位於 `projects/my_demo/output/v1.mp4`。預設目標響度為 -14 LUFS，可在專案設定中調整。
 
 ## 步驟 9：（選配）匯出剪映 / CapCut 草稿做手動精修
 

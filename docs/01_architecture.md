@@ -1,4 +1,4 @@
-# 系統架構與目錄設計（`00_docs/01_architecture.md`）
+# 系統架構與目錄設計
 
 本專案採用「**旁白文字驅動精準影格**」的確定性剪片架構。傳統人工剪片會因修改一句台詞而迫使後面全部畫面與音效錯位；本管線將 `script.json` 視為唯一單一真值來源，由時間軸自動重算一切視覺與字幕時間點。
 
@@ -6,7 +6,7 @@
 
 ```mermaid
 flowchart TD
-    S["06_projects/&lt;proj&gt;/script.json + facts.yaml"] -->|vc validate| VAL{"事實表 / ASD-STE100<br/>嚴格門禁"}
+    S["projects/&lt;proj&gt;/script.json + facts.yaml"] -->|vc validate| VAL{"腳本與事實表檢查"}
     IN["input/*.pptx + *.mp4"] -->|ingest-ppt / ingest-rec| WORK["work/recordings.json + slides/"]
     VAL -->|通過| VOX["vc voice<br/>(Kokoro / Edge TTS -> 48kHz WAV)"]
     VOX --> ALI["vc align<br/>(Whisper small.en 逐字對齊 + SRT)"]
@@ -17,33 +17,35 @@ flowchart TD
     PLN -->|kind=anim| HF["vc hf (HyperFrames --gpu)"]
     PLN -->|kind=recording| FIT["vc fit (FFmpeg 裁切變速 + NVENC)"]
 
-    MAN --> REM["vc render<br/>(Remotion ANGLE GPU + 混音 + EBU R128 -16 LUFS)"]
+    MAN --> REM["vc render<br/>(Remotion + 混音 + 預設 -14 LUFS)"]
     HF --> REM
     FIT --> REM
-    REM --> OUT1["output/internal/*.mp4（實機錄影 + 品牌 Logo）"]
-    REM --> OUT2["output/public/*.mp4（純程式動畫脫敏版）"]
+    REM --> OUT["output/&lt;name&gt;.mp4 + final.srt + reports/"]
 ```
 
-## 2. 為什麼採用 `00_` ~ `09_` 編號目錄？
+## 2. 目前目錄分工
 
-這套編排遵循 AI 開發工程的最佳實踐，讓使用者與 AI Agent 進到倉庫就能依「規則 → 流程 → 技能 → 風格 → 參考 → 實作 → 測試」順序定位檔案：
+倉庫已移除舊版數字目錄前綴。以下路徑以目前實際目錄為準：
 
 | 目錄 | 用途與定位 | 是否進 Git |
 | :--- | :--- | :--- |
-| `00_docs/` | 給人看的使用手冊、架構圖、環境安裝、GPU 說明與 Brief 範本 | 是 |
-| `01_rules/` | 寫給人與 Agent 的硬性規則（核心紀律、ASD-STE100、ISO 24495-1、影音規格） | 是 |
-| `02_workflows/` | BMAD + BDD 開發生命週期與多代理協作流程 | 是 |
-| `03_skills/` | 可重用領域技能包（同步鏡像於 `.agents/skills/` 供 Agent 載入） | 是 |
-| `04_styles/` | 視覺風格包（每套含 `STYLE.md` + `style.json`） | 是 |
-| `05_references/` | `lemo-opuscar`、`anatomy`、`hyperframes` 與 Remotion 生態深度分析 | 是 |
-| `06_projects/` | 各別影片專案資料夾（預設僅保留 `_sample` 與 `_sample_exec`） | 僅範例 |
-| `07_features/` | Gherkin `.feature` 行為規格（定義管線「做對什麼事」） | 是 |
-| `08_tests/` | `pytest-bdd` 自動化測試與靜態回歸門禁 | 是 |
-| `09_scripts/` | 環境重建 `setup.ps1`、模型冒煙測試與畫面抽幀檢查工具 | 是 |
+| `docs/` | 使用手冊、架構、環境安裝與 Brief 範本 | 是 |
+| `rules/` | 人與 Agent 的開發及影音規則 | 是 |
+| `workflows/` | 開發生命週期與新影片 SOP | 是 |
+| `skills/` | 可重用領域技能包 | 是 |
+| `styles/` | 風格設定與 Jinja2 動畫範本 | 是 |
+| `docs/references/` | 開源生態參考分析 | 是 |
+| `projects/` | 自包含影片專案；私人專案預設忽略 | 僅範例 |
+| `tests/features/` | Gherkin 行為規格 | 是 |
+| `tests/` | BDD、單元與整合測試 | 是 |
+| `scripts/` | 安裝、模型冒煙測試與維護工具 | 是 |
+| `assets/` | 共用圖片、品牌與音訊素材 | 依素材設定 |
 | `vc/` & `remotion/` | 核心 Python CLI 套件與 Node.js Remotion 合成器（維持不編號確保模組載入相容） | 是 |
 
-## 3. 雙軌隱私分流（`internal` vs `public`）
+## 3. 單一影片與產物有效性
 
-在企業或客戶現場製作技術教學時，同一套腳本往往需要輸出兩個版本：
-- **`internal`（內部培訓版）**：允許穿插真實軟體螢幕錄影（`kind: recording`）、投影片原圖與單位品牌標誌。
-- **`public`（外部開源或公開版）**：由 `vc validate` 與 BDD 測試強制把關，`public` 版只能包含重新繪製的向量動畫（Manim 或 HyperFrames SVG），嚴禁出現真實軟體畫面、圖片檔名或私有 Logo。
+每個場景以 `visual` 指定 `recording`、`anim` 或 `manim`，最後輸出一支影片。舊雙版本腳本先執行 `python -m vc migrate <project>`；原始檔會備份為 `script.json.bak`。
+
+管線檢查腳本、音檔、匯入素材、風格與動畫的來源指紋。若輸入已變更，後續階段會要求重建過期產物。正式渲染缺少必要片段時會失敗；新成品通過影格、音訊與響度檢查後，才取代同名舊成品。
+
+目前範例腳本位於 [`projects/_sample/script.json`](../projects/_sample/script.json) 與 [`projects/_sample_exec/script.json`](../projects/_sample_exec/script.json)。範例不含原始簡報與錄影，完整製片前需自行準備素材。

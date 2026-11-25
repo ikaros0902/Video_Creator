@@ -1,4 +1,4 @@
-# Core Engineering Rules (`01_rules/00_core_rules.md`)
+# Core Engineering Rules
 
 All rules below apply to both AI agents and human operators.
 
@@ -11,9 +11,9 @@ All rules below apply to both AI agents and human operators.
 
 ## 2. BMAD Before Code
 
-1. Complete the Project Brief (`00_docs/04_project_brief_template.md`) before you write narration.
+1. Complete the Project Brief (`docs/04_project_brief_template.md`) before you write narration.
 2. Specify the 7-section or 5-section arc before you slice screen recordings.
-3. Update `07_features/*.feature` before you change pipeline behavior.
+3. Update `tests/features/*.feature` before you change pipeline behavior.
 
 ## 3. Frame-Accurate Synchronization
 
@@ -22,10 +22,10 @@ All rules below apply to both AI agents and human operators.
 3. Use `at_word` triggers in `script.json` so animations and callouts lock to spoken words.
 4. Never slow a clip down to fill empty time; clamp slow clips cleanly or freeze the final frame.
 
-## 4. Dual-Track Privacy Split
+## 4. Single-Video Material Review
 
-1. `internal` variant may include real screen recordings (`kind: recording`) and approved brand logos.
-2. `public` variant must use only programmatic animation (`kind: anim` or `kind: manim`) and zero proprietary images.
+1. The project produces one video with one visual setting for each scene.
+2. Review recordings, images, audio, and logos before publication.
 3. Never commit `Videos/` or private project folders to GitHub.
 
 ## 5. GPU With Deterministic CPU Fallback

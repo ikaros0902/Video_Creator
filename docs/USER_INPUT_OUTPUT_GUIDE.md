@@ -8,22 +8,24 @@
 
 ### 核心理念
 
-Video Creator 是一套「以旁白與分鏡腳本為單一真值來源」的規格驅動自動化影片生產管線。您只需提供簡報、操作錄影與結構化文案，管線即可自動完成語音合成、毫秒級逐字對齊、動態卡片渲染、背景音樂避讓（Ducking）與最終 1080p 影片壓制。
+Video Creator 以旁白、分鏡腳本與事實表驅動影片管線。準備所需素材與設定後，可依序執行語音合成、逐字對齊、動畫渲染、背景音樂避讓與影片合成。每個場景只使用一份 `visual` 設定，最後輸出單一影片。
 
 ### 3 分鐘快速體驗範例
 
 在專案根目錄開啟終端機（PowerShell），執行下列指令即可驗證既有範例專案：
 
 ```powershell
-# 1. 執行環境依賴健全度診斷（確保 28 項依賴均顯示 OK）
-python -m vc doctor
+# 1. 執行環境診斷；必要項目需通過，選用項目可能顯示 WARN
+.venv\Scripts\python.exe -m vc doctor
 
 # 2. 驗證內建範例專案之腳本語法與事實真相表
-python -m vc validate _sample
+.venv\Scripts\python.exe -m vc validate _sample
 
-# 3. 驗證正式專案（例如 midsurface）之自包含規格
-python -m vc validate midsurface
+# 3. 驗證另一份內建摘要範例
+.venv\Scripts\python.exe -m vc validate _sample_exec
 ```
+
+完整範例腳本位於 [`projects/_sample/script.json`](../projects/_sample/script.json) 與 [`projects/_sample_exec/script.json`](../projects/_sample_exec/script.json)。倉庫未附範例原始簡報與錄影；腳本驗證通過不代表素材已可完整渲染。
 
 ---
 
@@ -38,16 +40,16 @@ projects/<project_name>/
 │   ├── recordings/         # 軟體操作螢幕錄影 (*.mp4)
 │   ├── audio/              # 自訂音訊或背景音樂 (*.mp3, *.wav)
 │   └── assets/             # 專案專屬圖片、SVG 向量圖或示意圖 (*.png, *.jpg, *.svg)
-├── project.yaml            # 專案主設定檔（專案識別、風格選擇、配音員指定）
+├── project.yaml            # 專案識別、素材路徑、風格與運鏡設定
 ├── facts.yaml              # 事實真相表（旁白數字出處、數值與白名單硬門禁）
-└── script.json             # 唯一由人維護的分鏡腳本（旁白、視覺標註、雙軌模式）
+└── script.json             # 分鏡、旁白、配音與單一畫面設定
 ```
 
 ### 2.1 簡報檔案規範 (`input/slides/`)
 
 - **支援格式**：Microsoft PowerPoint 簡報（`.pptx`）。
 - **長寬比與解析度**：強烈建議設定為 16:9 寬螢幕（1920x1080）。
-- **投影片備忘稿（Slide Notes）**：管線在執行 `vc ingest-ppt` 時會自動擷取備忘稿文字，可作為初版旁白腳本的自動生成來源。
+- **投影片備忘稿（Slide Notes）**：`vc ingest-ppt` 會擷取備忘稿文字，可供撰寫初版旁白時參考；不會自動產生完整腳本。
 - **命名建議**：使用小寫英數字與底線，如 `presentation_v1.pptx` 或 `ACT-SC_Midsurface_Automation.pptx`。
 
 ### 2.2 螢幕錄影規範 (`input/recordings/`)
@@ -60,8 +62,8 @@ projects/<project_name>/
 ### 2.3 背景音樂與音訊規範 (`input/audio/`)
 
 - **檔案命名**：若專案需使用專屬背景音樂，請放置於 `input/audio/bgm.mp3`（或 `input/bgm.mp3`）。
-- **自動 Ducking 避讓**：管線在最終合成階段會自動偵測旁白語音區間；當旁白發聲時，背景音樂會自動平滑降音（衰減約 -14 dB），語音間歇時恢復正常響度。
-- **全域免版稅音樂**：若專案未提供自訂配樂，系統將自動從 `assets/templates/audio/bgm_midsurface.mp3` 載入預設高質感工程風格背景音樂。
+- **自動 Ducking 避讓**：管線量測旁白與配樂響度，計算旁白時低於旁白約 20 dB、停頓時低約 14 dB 的配樂增益；實際增益會受上限限制。
+- **共用音樂**：`assets/templates/audio/background_music_01.mp3` 與 `background_music_02.mp3` 是共用素材。先複製所選音訊為專案 `input/audio/bgm.mp3` 才會套用。渲染器依序讀取專案 `input/bgm.mp3`、`input/audio/bgm.mp3`、專案根目錄 `bgm.mp3`，不會自動載入全域素材；沒有配樂則略過。
 
 ---
 
@@ -69,19 +71,12 @@ projects/<project_name>/
 
 ### 3.1 專案設定檔：`project.yaml`
 
-`project.yaml` 定義影片的基本元數據、視覺主題風格、運鏡風格與素材路徑：
+`project.yaml` 定義專案識別、視覺主題、運鏡與素材路徑。影片標題、fps、尺寸及配音設定放在 `script.json` 的 `meta`：
 
 ```yaml
 name: midsurface                                # 專案唯一標識符（英數字與底線）
-title: "ANSYS Midsurface Automated Preparation" # 影片正式標題
-style: executive_navy                           # 視覺風格包：executive_navy | swiss_kinetic | blueprint | isometric
+style: executive_navy                           # executive_navy | swiss_kinetic | blueprint | cyberpunk_neon
 camera_mode: dynamic                            # 運鏡模式：fixed（固定）| dynamic（平滑追焦）| cinematic（電影推拉）
-fps: 30                                         # 影片畫格率（預設 30）
-resolution: [1920, 1080]                        # 畫布尺寸 [寬, 高]
-voice:
-  engine: kokoro                                # 語音合成引擎：kokoro（本機高效）| edge（雲端擬真）
-  name: am_michael                              # 配音角色標識（kokoro: am_michael, am_adam, af_bella; edge: en-US-AndrewNeural）
-  rate: 1.05                                    # 語速倍率（標準為 1.0）
 pptx: input/slides/ACT-SC_Midsurface_Automation.pptx
 recordings:
   - input/recordings/MidsurfaceACT.mp4
@@ -114,10 +109,11 @@ manual_time:
 
 ### 3.3 分鏡腳本檔：`script.json`
 
-`script.json` 是全片唯一的劇情與畫面排程核心，包含全域元數據、音譯字典、術語定義、禁詞黑名單與各分鏡場景（Scenes）：
+`script.json` 包含影片設定、音譯字典、術語、禁詞與場景。以下僅為欄位示意，並非可直接通過段落順序及時長檢查的完整腳本；完整範例請使用上方連結。
 
 ```json
 {
+  "schema_version": 2,
   "meta": {
     "title": "ANSYS Midsurface Automated Preparation",
     "fps": 30,
@@ -152,13 +148,12 @@ manual_time:
       "narration": "An engineer prepares thin metal bodies for stress analysis. The built-in CAD tool leaves open seams.",
       "budget_s": [15.0, 19.0],
       "facts": [],
-      "visuals": {
-        "internal": {
+      "visual": {
           "kind": "recording",
           "template": "vs_intro",
           "clips": [
             {
-              "recording": "MidsurfaceACT",
+              "recording": "rec01",
               "source": [2.0, 8.0],
               "label": "Built-in Tool Seams",
               "camera": "dolly_in"
@@ -172,24 +167,13 @@ manual_time:
               "clip": 0
             }
           ]
-        },
-        "public": {
-          "kind": "anim",
-          "template": "vs_intro_mock",
-          "data": {
-            "title": "Thin Shell Defect Comparison",
-            "badge": "PROBLEM DEMO"
-          }
-        }
       }
     }
   ]
 }
 ```
 
-> **重要隱私約束**：
-> - `visuals.internal`：允許使用 `recording`（實機操作）、`anim`（向量卡片）與 `manim`（數學幾何）。
-> - `visuals.public`：為保護內部商業敏感介面，**強制限制僅能使用 `anim` 或 `manim`**，嚴禁出現 `recording` 或真實投影片截圖。
+`visual.kind` 可為 `recording`、`anim` 或 `manim`。錄影依 `project.yaml.recordings` 順序編為 `rec01`、`rec02` 等。舊 `visuals.internal/public` 格式需先執行 `.venv\Scripts\python.exe -m vc migrate <project>`，原始腳本會備份為 `script.json.bak`。
 
 ---
 
@@ -199,22 +183,18 @@ manual_time:
 
 ```text
 projects/<name>/output/
-├── internal/                           # 內部培訓版（含實機畫面與操作細節）
-│   ├── <YYYYMMDD>_<variant>_<name>.mp4  # 1080p 內部母帶視訊
-│   └── <YYYYMMDD>_<variant>_<name>.srt  # 毫秒精準雙語/英文字幕檔
-├── public/                             # 外部公開版（純向量動態圖表脫敏版）
-│   ├── <YYYYMMDD>_<variant>_<name>.mp4  # 1080p 公開脫敏視訊
-│   └── <YYYYMMDD>_<variant>_<name>.srt  # 毫秒精準字幕檔
-└── reports/                            # 質檢與合規認證報告
-    ├── metadata.json                   # 總影格數、編碼耗時、平均碼率、解析度
-    └── loudness_report.json            # EBU R128 (-16 LUFS) 響度合規認證數據
+├── <name>.mp4                          # 單一影片，由 render --name 指定
+├── final.srt                           # 由 plan 產生的影片時間軸字幕
+└── reports/
+    ├── metadata.json                   # 檔名、影格數、時長、解析度與檔案大小
+    └── loudness_report.json            # 目標與實測響度、峰值及檢查結果
 ```
 
 ### 輸出命名規範
 
-- **視訊檔案**：預設採用 `<name>.mp4`，建議生產環境加上日期與版本，例如 `20261115_internal_midsurface_v1.mp4`。
+- **視訊檔案**：未指定 `--name` 時為 `draft.mp4`；可指定英數字、底線或連字號，例如 `20261125_midsurface_v1`。
 - **SRT 字幕檔案**：由 Whisper 逐字對齊產生，採用 UTF-8 編碼，時間戳精確至毫秒（`00:00:01,250 --> 00:00:03,400`）。
-- **EBU R128 音訊響度標準**：整合響度目標為 **-16.0 LUFS (±1.0 LUFS)**，真實峰值（True Peak）不超過 **-1.0 dBTP**，符合 YouTube、Vimeo 與主流線上教育平台標準。
+- **預設音訊目標**：整合響度 **-14.0 LUFS（容許 ±1.0 LUFS）**、True Peak 目標 **-1.5 dBTP**。可在 `project.yaml` 設定 `loudness.target_lufs` 與 `loudness.true_peak`；輸出檢查對峰值保留 0.1 dB 容差。
 
 ---
 
@@ -224,35 +204,35 @@ projects/<name>/output/
 
 ```powershell
 # 步驟 1：依賴檢查 — 確認本機工具與 GPU 正常就緒
-python -m vc doctor
+.venv\Scripts\python.exe -m vc doctor
 
 # 步驟 2：素材攝取 — 解析簡報結構與匯出投影片圖片
-python -m vc ingest-ppt midsurface
+.venv\Scripts\python.exe -m vc ingest-ppt midsurface
 
 # 步驟 3：錄影攝取 — 探測錄影時長、解析度並建立特徵索引
-python -m vc ingest-rec midsurface
+.venv\Scripts\python.exe -m vc ingest-rec midsurface
 
-# 步驟 4：分鏡驗證 — 嚴格稽核旁白字數、易讀度等級、事實真相表與隱私限制
-python -m vc validate midsurface
+# 步驟 4：分鏡驗證 — 檢查旁白字數、易讀度、事實表與畫面引用
+.venv\Scripts\python.exe -m vc validate midsurface
 
 # 步驟 5：配音合成 — 透過本機 Kokoro TTS 批次產生各分鏡旁白音訊
-python -m vc voice midsurface
+.venv\Scripts\python.exe -m vc voice midsurface
 
 # 步驟 6：逐字對齊 — 透過 OpenAI Whisper 提取單詞時間戳並生成字幕
-python -m vc align midsurface
+.venv\Scripts\python.exe -m vc align midsurface
 
 # 步驟 7：時間軸規劃 — 進行零累積捨入誤差的影格級時間軸排程
-python -m vc plan midsurface
+.venv\Scripts\python.exe -m vc plan midsurface
 
 # 步驟 8：動態卡片與數學動畫渲染 — 透過 Manim 與 Hyperframes 產出中間片段
-python -m vc manim midsurface
-python -m vc hf midsurface
+.venv\Scripts\python.exe -m vc manim midsurface
+.venv\Scripts\python.exe -m vc hf midsurface
 
 # 步驟 9：錄影自動剪裁與智慧變速 — 依據旁白長度自動微調錄影動作
-python -m vc fit midsurface
+.venv\Scripts\python.exe -m vc fit midsurface
 
-# 步驟 10：總合成渲染 — 呼叫 Remotion 進行雙軌分流合成與 EBU R128 響度壓制
-python -m vc render midsurface --variant all --name v1
+# 步驟 10：總合成渲染 — 呼叫 Remotion 合成單一影片並調整響度
+.venv\Scripts\python.exe -m vc render midsurface --name v1
 ```
 
 ---
@@ -265,18 +245,18 @@ python -m vc render midsurface --variant all --name v1
   1. 開啟該專案的 `facts.yaml`。
   2. 新增或確認包含該數字的事實條目，將數字放入 `spoken: ["4"]` 清單中。
   3. 將該事實條目的 `confirmed: true` 設為 true。
-  4. 重新執行 `python -m vc validate <project>` 即可通過。
+  4. 重新執行 `.venv\Scripts\python.exe -m vc validate <project>` 即可通過。
 
-### Q2: `vc validate` 出現「public 版不能使用 recording」報錯？
-- **原因**：系統內建商業機密防洩漏機制，公開版（`visuals.public`）禁止使用 `recording` 類型的素材或引用簡報截圖。
-- **排查對策**：將 `script.json` 中對應場景的 `visuals.public.kind` 修改為 `"anim"` 或 `"manim"`，並配置對應的動態卡片樣板。
+### Q2: 舊腳本仍使用 `visuals.internal/public`，或指令帶有 `--variant`？
+- **對策**：先執行 `.venv\Scripts\python.exe -m vc migrate <project>`，再重建素材匯入、語音、對齊、時間軸與片段。轉換以原 `internal` 畫面作為單一 `visual`，原始腳本會保留備份。新指令不再使用 `--variant`。
 
 ### Q3: 執行渲染時出現 GPU 記憶體不足（CUDA Out of Memory）或無顯示卡環境？
-- **對策**：Video Creator 內建完善的 CPU 優雅降級機制。您可在指令後加上 `--no-gpu` 參數，或於環境中設定變數：
+- **對策**：渲染命令可加上 `--no-gpu`。語音與對齊若要使用 CPU，另外設定 `VC_DEVICE=cpu`：
   ```powershell
-  # 暫時關閉 GPU 加速，平滑切換至純 CPU 運算
+  # 停用渲染 GPU 參數，並指定語音與對齊使用 CPU
   $env:VC_GPU = "off"
-  python -m vc render <project> --no-gpu
+  $env:VC_DEVICE = "cpu"
+  .venv\Scripts\python.exe -m vc render <project> --no-gpu
   ```
 
 ### Q4: 如何預覽或微調 Remotion 合成畫面？
@@ -284,4 +264,4 @@ python -m vc render midsurface --variant all --name v1
   ```powershell
   npm run remotion:studio
   ```
-  系統將在瀏覽器啟動 `http://localhost:3000` 互動播放器，支援拖曳時間軸、即時檢查影格、動態字幕與分軌圖層。
+  開啟終端機顯示的網址，使用實際產生的 `work/remotion/props.json` 與專案工作素材檢查合成。未提供專案 props 時，Studio 預設內容不代表目前影片。

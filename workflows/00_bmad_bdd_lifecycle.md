@@ -1,4 +1,4 @@
-# BMAD + BDD 影片開發生命週期（`02_workflows/00_bmad_bdd_lifecycle.md`）
+# BMAD + BDD 影片開發生命週期
 
 本專案將軟體工程的 **BMAD（Breakthrough Method for Agile AI-Driven Development）** 與 **BDD（行為驅動開發，Gherkin `.feature`）** 結合到自動化剪片流程中，讓每一秒畫面與每一組數據都可追溯、可測試、可重現。
 
@@ -12,8 +12,8 @@ flowchart LR
 
 ## Phase 1：Brief 與 Fact Table（真值來源確立）
 
-- 填寫專案需求書（見 [`00_docs/04_project_brief_template.md`](../00_docs/04_project_brief_template.md)），定義目標觀眾、單版/雙軌（`internal` vs `public`）與秒數上限。
-- 盤點真實素材與數據，寫入 `06_projects/<name>/facts.yaml`：
+- 填寫專案需求書（見 [需求範本](../docs/04_project_brief_template.md)），定義目標觀眾、影片用途與秒數上限。
+- 盤點真實素材與數據，寫入 `projects/<name>/facts.yaml`：
   - 每個數字必須附上原始出處 `sources`（錄影時間戳或文件頁碼）。
   - 主管精簡版必須將所有條目補上 `scope` 與 `shown` 並啟用 `strict_facts: true`。
   - 未親自確認的數據不得將 `confirmed` 設為 `true`。
@@ -21,15 +21,13 @@ flowchart LR
 ## Phase 2：Method 與 Storyboard（分段與資產配對）
 
 - 選用標準 7 段結構（完整教學 ~150s）或 5 段結構（主管精簡 ~75s）。
-- 為每個場景配置雙軌視覺：
-  - `internal`：實機錄影（`recording`）搭配自動標註框（`callouts`）、時間卡（`timer_card`）與 Manim 原理圖。
-  - `public`：純向量動畫（HyperFrames `anim` + Manim `manim`），嚴禁出現機密畫面與客戶 Logo。
-- 挑選視覺主題風格（見 [`04_styles/`](../04_styles/)）。
+- 為每個場景配置一個 `visual`，選擇錄影（`recording`）、HyperFrames 動畫（`anim`）或 Manim（`manim`）。發布前審查素材。
+- 挑選視覺主題風格（見 [`styles/`](../styles/)）。
 
 ## Phase 3：Feature Specs 與 Script Validation（BDD 測試先行）
 
-- 若新增了場景樣板、字數預算或驗證規則，先在 [`07_features/`](../07_features/) 新增對應 Gherkin 情境，並在 [`08_tests/`](../08_tests/) 補齊步驟實作。
-- 編輯 `06_projects/<name>/script.json`，執行前置驗證：
+- 若新增了場景樣板、字數預算或驗證規則，先在 [`tests/features/`](../tests/features/) 新增對應 Gherkin 情境，並在 [`tests/bdd/`](../tests/bdd/) 補齊步驟實作。
+- 編輯 `projects/<name>/script.json`，執行前置驗證：
   ```powershell
   .venv\Scripts\python.exe -m vc validate <project>
   ```
@@ -48,5 +46,5 @@ flowchart LR
 ## Phase 5：Automated QA & Close-Up Audit
 
 - 執行 `.venv\Scripts\python.exe -m pytest -q` 確認所有管線契約回歸無誤。
-- 以 `09_scripts/grab_frames.py` 抽取關鍵轉場幀檢查文字邊界與等軸圖表無重疊。
-- 核對輸出終端的影格數（如 `4500/4500 格`）與 `-16.0 LUFS` 報告。
+- 以 `scripts/grab_frames.py` 抽取關鍵轉場幀檢查文字邊界與等軸圖表無重疊。
+- 核對輸出影格數與響度報告；預設目標為 `-14.0 LUFS`，可於專案設定中調整。

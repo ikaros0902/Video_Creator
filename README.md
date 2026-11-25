@@ -6,15 +6,16 @@
 
 ## 核心設計亮點
 
-- **單一真值來源與嚴格事實門禁（`vc validate`）**：腳本中說出與畫面顯示的每一個數字，都必須追溯自 `facts.yaml` 的已確認出處；主管摘要模式（`strict_facts: true`）還會逐段強制檢查適用範圍 `scope`。
+- **腳本與事實驗證（`vc validate`）**：檢查旁白數字、來源確認狀態、詞彙與時間預算；`strict_facts: true` 另逐段檢查畫面數字與適用範圍 `scope`。
 - **旁白驅動無漂移時間軸（`vc voice` → `vc align` → `vc plan`）**：採用 Kokoro / Edge 合成 48kHz 旁白，經 OpenAI Whisper 逐字對齊，所有動畫與錄影裁切直接鎖定口播單字（`at_word`），修改腳本免重剪整條軌道。
-- **三引擎協同渲染 + 全管線 GPU 加速**：
+- **三引擎協同渲染**：
   - **Manim**（向量幾何與數學原理，FFmpeg `h264_nvenc`）
   - **HyperFrames**（HTML/GSAP 等軸向量與數據字卡，`--gpu --browser-gpu`）
   - **Remotion**（實機錄影鏡頭推拉、標註框與預設 `-14 LUFS` 響度合流，`--gl=angle`）
-  - 全管線支援自動偵測顯卡（NVIDIA CUDA / NVENC、macOS MPS）與 **CPU 確定性自動回退**。
+  - 各階段依環境使用 GPU 或 CPU；可用 `vc doctor` 檢查工具與裝置。
 - **單一影片輸出**：舊雙版本專案可使用 `vc migrate` 備份並轉換為單一畫面設定。
-- **66 項 BDD 自動化回歸測試**：透過 `pytest-bdd` 守護字詞時間對齊、響度混音比例、錄影變速上限（2.5x）與公開版隱私隔離契約。
+- **BDD 與安全門禁**：測試字詞時間對齊、混音、錄影變速上限（2.5x）、素材新鮮度與失敗時保留既有成品。預設測試不執行需要外部素材的整合案例。
+- **本機創作工具**：`vc creative` 提供靈感資料、風格比較與排版預覽，`vc reference` 可呼叫隔離環境中的 rea-video 拆解參考影片。
 
 ---
 
@@ -43,32 +44,57 @@ powershell -ExecutionPolicy Bypass -File scripts\setup.ps1 -CpuOnly
 
 複製 `projects/_sample` 為新專案，再依 [使用指南](docs/00_how_to_use.md) 執行管線。影片輸出至 `projects/<project>/output/`。參考影片分析與風格工作區分別見 [分析指南](docs/REFERENCE_ANALYSIS.md) 和 [設計工作區](docs/creative_tools.md)。
 
+## 範例腳本在哪裡？
+
+| 範例 | 腳本 | 用途 |
+| :--- | :--- | :--- |
+| 標準教學 | [`projects/_sample/script.json`](projects/_sample/script.json) | 七段教學結構，搭配同目錄的 `facts.yaml` 與 `project.yaml` |
+| 主管摘要 | [`projects/_sample_exec/script.json`](projects/_sample_exec/script.json) | 五段摘要，啟用逐段事實驗證 |
+| 風格示範 | [`projects/_sample_exec/style_demo/script.json`](projects/_sample_exec/style_demo/script.json) | 比較風格與運鏡設定，執行前需補齊其 README 列出的素材 |
+
+前兩個範例是文字藍圖，可直接執行 `vc validate`。倉庫沒有附帶它們引用的原始簡報、錄影及完整渲染產物；製片前需提供素材並更新設定。建立私人影片專案的方法見 [`projects/README.md`](projects/README.md)。
+
+### 使用共用背景音樂
+
+[`assets/templates/audio/`](assets/templates/audio/) 內有 `background_music_01.mp3` 與 `background_music_02.mp3`，兩者音訊內容相同。若要使用，將其中一個複製至影片專案的 `input/audio/bgm.mp3`；渲染器不會自動讀取共用資料夾。若專案已有 `input/bgm.mp3`，渲染器會優先使用該檔。
+
+```powershell
+New-Item -ItemType Directory -Force projects/my_video/input/audio
+Copy-Item assets/templates/audio/background_music_01.mp3 projects/my_video/input/audio/bgm.mp3
+```
+
 ---
 
 ## 倉庫架構總覽
 
 ```text
 Video_Creator/
-├── AGENTS.md / CLAUDE.md       # AI 編碼代理入口規範（ASD-STE100 控制英語）
-├── 00_docs/                    # 使用手冊、架構圖、安裝指南、GPU 調校與 Brief 範本（ISO 24495-1）
-├── 01_rules/                   # 核心開發紀律、ASD-STE100、ISO 24495-1、影音響度標準
-├── 02_workflows/               # BMAD + BDD 生命週期、實戰 SOP、多代理角色矩陣
-├── 03_skills/                  # 5 大領域模組化 Skills（同步鏡像至 .agents/skills/）
-├── 04_styles/                  # 可複用視覺風格包（STYLE.md + style.json）
-├── 05_references/              # lemo-opuscar、anatomy、hyperframes 與 Remotion 生態剖析
-├── 06_projects/                # 影片專案目錄（Git 僅保留脫敏示範 _sample 與 _sample_exec）
-├── 07_features/                # Gherkin .feature 行為規格書
-├── 08_tests/                   # pytest-bdd 自動化測試套件
-├── 09_scripts/                 # 環境安裝、模型冒煙測試與抽幀檢查工具
-├── vc/                         # 核心 Python CLI 管線套件（python -m vc）
-└── remotion/                   # Master 1080p React/Remotion 合成器
+├── AGENTS.md / CLAUDE.md       # 編碼代理規範入口
+├── assets/                    # 共用素材與模板資產
+├── docs/                      # 使用、安裝、分析與設計工作區文件
+│   └── references/            # 外部影音專案的參考分析
+├── rules/                     # 開發、文案與影音規則
+├── workflows/                 # 製片 SOP 與開發流程
+├── skills/                    # 專案技能與驗證腳本
+├── styles/                    # 四套風格參數與 Jinja2 動畫模板
+├── projects/                  # 影片專案；Git 保留 _sample 與 _sample_exec
+├── tests/                     # 單元、BDD 與整合測試
+│   ├── features/              # Gherkin 行為規格
+│   └── bdd/                   # 規格步驟實作
+├── scripts/                   # 環境安裝、模型測試與檢查工具
+├── vc/                        # Python CLI 與影音管線
+├── remotion/                  # React / Remotion 合成器
+└── external/                  # 外部工具清單；本機下載內容不納入 Git
 ```
+
+安裝後產生的 `.venv/`、`node_modules/`、`tools/`、`models/`，以及專案內的 `input/`、`work/`、`output/` 屬本機環境或產物，不是下載倉庫時就具備的範例成品。
 
 ## 深入文件導航
 
-- **操作指南與架構**：[`00_docs/00_how_to_use.md`](00_docs/00_how_to_use.md)｜[`00_docs/01_architecture.md`](00_docs/01_architecture.md)｜[`00_docs/03_gpu_acceleration.md`](00_docs/03_gpu_acceleration.md)
-- **工作流與開發規範**：[`02_workflows/00_bmad_bdd_lifecycle.md`](02_workflows/00_bmad_bdd_lifecycle.md)｜[`01_rules/00_core_rules.md`](01_rules/00_core_rules.md)
-- **風格與技能生態**：[`04_styles/`](04_styles/)｜[`05_references/00_ecosystem_overview.md`](05_references/00_ecosystem_overview.md)
+- **使用與環境**：[操作指南](docs/00_how_to_use.md)｜[環境需求](docs/02_requirements_guide.md)｜[GPU 說明](docs/03_gpu_acceleration.md)
+- **創作與分析**：[設計工作區](docs/creative_tools.md)｜[參考影片分析](docs/REFERENCE_ANALYSIS.md)
+- **工作流與規則**：[製片 SOP](workflows/01_new_video_sop.md)｜[開發流程](workflows/00_bmad_bdd_lifecycle.md)｜[核心規則](rules/00_core_rules.md)
+- **範例與風格**：[專案範例](projects/README.md)｜[風格參數](styles/)｜[外部專案分析](docs/references/00_ecosystem_overview.md)
 
 ## 開源致謝與參考生態
 

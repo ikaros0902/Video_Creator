@@ -1,4 +1,4 @@
-# 新影片專案 Brief 填空範本（`00_docs/04_project_brief_template.md`）
+# 新影片專案 Brief 填空範本
 
 開始任何新影片專案前（BMAD Phase 1），請先複製此範本並填入完整資訊，交由腳本撰寫與事實審查角色確認。
 
@@ -6,11 +6,10 @@
 
 ## 1. 專案基本資料
 
-- **專案代號（`06_projects/<name>`）**：
+- **專案代號（`projects/<name>`）**：
 - **影片標題**：
-- **預定發行版本**：
-  - [ ] `internal`（內部培訓 / 含實機錄影與品牌標誌）
-  - [ ] `public`（外部公開 / 純程式向量動畫，嚴禁真實錄影與機密數據）
+- **預定輸出檔名（單一影片，英數字、底線或連字號）**：
+- **發布對象與需要遮蔽的敏感內容**：
 - **目標片長與架構**：
   - [ ] 標準完整教學 7 段（`130–170 s`）
   - [ ] 主管摘要精簡 5 段（`60–90 s`，強制開啟 `strict_facts: true`）
@@ -23,7 +22,7 @@
 
 ## 3. 原始素材清單（真值來源）
 
-| 編號 | 檔案類型 | 本機路徑（放於 `Videos/` 或 `input/`） | 解析度 / 頁數 / 用途備註 |
+| 編號 | 檔案類型 | 本機路徑（放於專案 `input/`） | 解析度 / 頁數 / 用途備註 |
 | :--- | :--- | :--- | :--- |
 | `pptx` | PowerPoint | | |
 | `rec01` | 螢幕錄影 | | |
@@ -38,6 +37,6 @@
 
 ## 5. 視覺主題與配樂偏好
 
-- **選用風格預設（見 `04_styles/`）**：例如 `01_executive_navy` / `02_isometric_anatomy`
-- **品牌標誌需求（僅 `internal` 版）**：是否放入 `Videos/Templates/primary_logo.png` 與 `secondary_logo.png`？
-- **配樂檔來源**：放置於 `input/bgm.mp3` 或 `Videos/Templates/bgm.mp3`（無配樂則自動跳過）
+- **選用風格預設（見 `styles/`）**：`executive_navy` / `swiss_kinetic` / `blueprint` / `cyberpunk_neon`，或專案內自訂風格 JSON。
+- **品牌標誌需求**：是否提供 `assets/templates/primary_logo.png` 與 `secondary_logo.png`，並在對應場景啟用？
+- **配樂檔來源**：放置於專案 `input/bgm.mp3`、`input/audio/bgm.mp3` 或專案根目錄 `bgm.mp3`（按此順序選擇；沒有則不加配樂）。共用素材 `assets/templates/audio/background_music_01.mp3`、`background_music_02.mp3` 需先複製至上述專案位置，不會自動載入。
